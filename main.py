@@ -29,21 +29,21 @@ BasicObject.INIT(CORPUSPath, corpusFileIden, textType,
 ##################################
 
 
-# CHANNEL_SETTINGS_TEMPLATE = {
-#     # CTX_IND
-#     'token':   {'use': True, 'Max_Ngram': 1,},
-#     'char':    {'use': True,'Max_Ngram': 1, 'end_grain': False},
-#     'basic':   {'use': True,'Max_Ngram': 2, 'end_grain': False},
-#     'medical': {'use': True,'Max_Ngram': 2, 'end_grain': False},
-#     'radical': {'use': True,'Max_Ngram': 2, 'end_grain': False},
-#     'subcomp': {'use': True,'Max_Ngram': 3, 'end_grain': True},
-#     'stroke':  {'use': True,'Max_Ngram': 5, 'end_grain': True},
-#     # CTX_DEP
-#     'pos':     {'use': False,'Max_Ngram': 1, 'end_grain': False, 'tagScheme':   'BIO',},
-#     # ANNO
-#     'annoR':   {'use': False,'Max_Ngram': 1, 'end_grain': False, 'tagScheme':   'BIO',},
-#     'annoE':   {'use': False,'Max_Ngram': 1, 'end_grain': False, 'tagScheme':   'BIO',},
-# }
+CHANNEL_SETTINGS_TEMPLATE = {
+    # CTX_IND
+    'token':   {'use': True, 'Max_Ngram': 1,},
+    'char':    {'use': True,'Max_Ngram': 1, 'end_grain': False},
+    'basic':   {'use': True,'Max_Ngram': 2, 'end_grain': False},
+    'medical': {'use': True,'Max_Ngram': 2, 'end_grain': False},
+    'radical': {'use': True,'Max_Ngram': 2, 'end_grain': False},
+    'subcomp': {'use': True,'Max_Ngram': 3, 'end_grain': True},
+    'stroke':  {'use': True,'Max_Ngram': 5, 'end_grain': True},
+    # CTX_DEP
+    'pos':     {'use': False,'Max_Ngram': 1, 'end_grain': False, 'tagScheme':   'BIO',},
+    # ANNO
+    'annoR':   {'use': False,'Max_Ngram': 1, 'end_grain': False, 'tagScheme':   'BIO',},
+    'annoE':   {'use': False,'Max_Ngram': 1, 'end_grain': False, 'tagScheme':   'BIO',},
+}
 
 
 
