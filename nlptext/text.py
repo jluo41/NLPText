@@ -12,8 +12,6 @@ from .base import BasicObject
 from .sentence import Sentence
 from .token import Token
 
-
-# from .utils import segText2Sents
 from .utils.pyramid import segText2Sents
 
 class Text(BasicObject):
@@ -90,5 +88,5 @@ class Text(BasicObject):
 
     def __repr__(self):
         ctx =  self.name + " " + str(self.Idx)  if type(self.Idx) == int else 'New'
-        return "<Text " + ctx + ">"
+        return "<txt " + ctx + ">"
 

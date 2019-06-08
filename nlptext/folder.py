@@ -66,4 +66,4 @@ class Folder(BasicObject):
         return sum([st.TokensStartEnd for st in self.Sentences], [])
 
     def __repr__(self):
-        return "<Folder " + self.name + ' ' + str(self.Idx) + ">"
+        return "<gr " + self.name + ' ' + str(self.Idx) + ">"

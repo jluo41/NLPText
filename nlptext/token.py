@@ -4,10 +4,6 @@ import numpy as np
 
 from .base import BasicObject
 
-# from .channel import getChannelGrain4Token 
-# from .utils import getChannelName 
-# from .channel import START, END, UNK_ID   
-
 from .utils.grain import getChannelGrain4Token
 from .utils.channel import getChannelName
 from .utils.infrastructure import UNK_ID
@@ -43,54 +39,84 @@ class Token(BasicObject):
 
     def getChannelGrain(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False):
 
-        # channel: channelNe;
         if channel in self.CONTEXT_IND_CHANNELS:
-            # here the channel is only from the CTX_IND channels.
             return getChannelGrain4Token(self.token, channel, Max_Ngram = Max_Ngram, end_grain = end_grain)
+
         else:
-            # self._token exists.
+            ##################################################################################### Speical Case for CTX_DEP
+            if not self._token:
+                try:
+                    LGU, DGU = self.getGrainUnique(channel, Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
+                    grain_idx = self.get_ctx_dep_grain(channel, tagScheme = tagScheme)
+                    return [LGU[grain_idx]]
+                except:
+                    print('\tIn Pyramid, there is no CTX_DEP channel:', channel, 'Turn to the orignal way... (tk.getChannelGrain)') 
+            ##################################################################################### Speical Case for CTX_DEP
+
             channelGrain = self.Sentence.getChannelGrain(channel, Max_Ngram = Max_Ngram, tagScheme = tagScheme,
                                                          useStartEnd = False, end_grain = end_grain)
             return channelGrain[self.IdxTokenInSent]
 
-    def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, TokenNum_Dir = None, dontUseLookUp = False):
-        '''Inputs: channel_name, and GrainUnique'''
+    def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, TokenNum_Dir = None, 
+                       channel_name = None, dontUseLookUp = False):
+        
+        if channel == 'token':
+            if TokenNum_Dir:
+                LTU, DTU = self.getGrainUnique(channel, TokenNum_Dir =TokenNum_Dir)
+                return [DTU.get(self.token, UNK_ID)], 1
+            else:
+                return [self.index], 1
 
-        ########################################################################################################
-        # option 1
-        channel_name = getChannelName(channel, Max_Ngram, tagScheme, end_grain)
-        tmp_TokenNum_Dir = TokenNum_Dir if TokenNum_Dir else self.TokenNum_Dir
-        lookup_channel_name_path = os.path.join(tmp_TokenNum_Dir, 'LookUp', channel_name + '.p')
-        if os.path.isfile(lookup_channel_name_path) and not dontUseLookUp:
-            
-            ### case 1: deal with the case: CTX_IND channel and this channel has LOOKUP.p
-            LOOKUP, TokenUnqiue = self.getLookUp(channel, Max_Ngram, end_grain = end_grain, 
-                                                 tagScheme = tagScheme, TokenNum_Dir = TokenNum_Dir)
-            LTU, DTU = TokenUnqiue
-            index = DTU.get(self.token, UNK_ID)
+        if not channel_name:
+            channel_name = getChannelName(channel, Max_Ngram = Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
 
-            if index != UNK_ID:
-                # print('\tUse LookUp from:'+lookup_channel_name_path)
-                info = LOOKUP[index] # TODO, to do what?
-                Info = np.array(info)
-                Leng = np.array(len(info), dtype='float32')
-                return Info, Leng 
-        ########################################################################################################
+        ########################################################################## Speical Case for IND and DEP
+        if channel in self.CONTEXT_IND_CHANNELS and not dontUseLookUp:
+            ####################################################################### LookUp Table
+            try:
+                LOOKUP, TokenUnqiue = self.getLookUp(channel_name = channel_name, TokenNum_Dir = TokenNum_Dir)
+                LTU, DTU = TokenUnqiue
+                index = DTU.get(self.token, UNK_ID) if TokenNum_Dir else self.index
+                if index != UNK_ID:
+                    info = LOOKUP[index]
+                    leng = len(info)
+                    return info, leng
+                else:
+                    # print('\tThough there is a LookUp Table, the token here is UNK...', self.token )
+                    pass
+            except:
+                print('\tNo LookUp Table is found for channel:  ', channel_name, 'Turn to the orignal way... (tk.getGrainTensor)')
+            ####################################################################### LookUp Table
+                
+        elif channel not in self.CONTEXT_IND_CHANNELS and not self._token:
+            ####################################################################### In Pyramid
+            try:
+                info = [self.get_ctx_dep_grain(channel, tagScheme = tagScheme, TokenNum_Dir = TokenNum_Dir)] # based on cls.TOKEN
+                return info, 1
+            except:
+                print('\tIn Pyramid, there is no CTX_DEP channel:', channel, 'Turn to the orignal way... (tk.getGrainTensor)') 
+            ####################################################################### In Pyramid
+        ########################################################################## Speical Case for IND and DEP
+
 
         ########################################################################################################
         # option 2: 
-        ### case 1: deal with the case: CTX_IND channel and this channel doesn't have LOOKUP.p
-        ### case 2: deal with the case: CTX_DEP channel and ANNO_CHANNEL
-        # print(TokenNum_Dir)
-        LGU, DGU = self.getGrainUnique(channel, Max_Ngram, end_grain = end_grain, 
-                                       tagScheme = tagScheme, TokenNum_Dir =TokenNum_Dir)
-        info = [DGU.get(i, UNK_ID) for i in self.getChannelGrain(channel,Max_Ngram = Max_Ngram, 
-                                                                       end_grain = end_grain, tagScheme = tagScheme)]
-
-        Info = np.array(info)
-        Leng = np.array(len(info), dtype='float32')
-        return Info, Leng 
+        ### case 1: deal with the case: CTX_IND channel and this channel doesn't have LOOKUP.p or the token is an UNK
+        ### case 2: deal with the case: CTX_DEP channel and ANNO_CHANNEL which not in pyramid.
+        LGU, DGU = self.getGrainUnique(channel, channel_name = channel_name, TokenNum_Dir =TokenNum_Dir)
+        info = [DGU.get(i, UNK_ID) for i in self.getChannelGrain(channel, Max_Ngram = Max_Ngram, 
+                                                                 end_grain = end_grain, tagScheme = tagScheme)]
+        leng = len(info)
+        return info, leng
         ########################################################################################################
+
+    def get_ctx_dep_grain(self, channel, tagScheme, TokenNum_Dir = None):
+        Idx = self.Idx
+        try:
+            return self.CTX_DEP_TMP[channel+tagScheme][Idx]
+        except:
+            self.Sentence.build_ctx_dep_grain(channel, tagScheme, TokenNum_Dir = TokenNum_Dir, to_tmp = True)
+            return self.CTX_DEP_TMP[channel+tagScheme][Idx]
 
 
     @property 
@@ -140,6 +166,6 @@ class Token(BasicObject):
             return Sentence(self.IdxSent)
 
     def __repr__(self):
-        return "<Token "  + self.token + " >"
+        return "<tk "  + self.token + " >"
 
     
