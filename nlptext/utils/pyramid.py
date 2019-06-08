@@ -108,7 +108,7 @@ def textFileReader(folderPath, fileNames, anno = False, sep = '\t', notZeroIndex
                     while string != strText[txtCharIdx: txtCharIdx + lenString]:
                         # Detect and Debug errors here.
                         # in case there is no enough sentences.
-                        print('--', txtCharIdx, '--', string)
+                        # print('--', txtCharIdx, '--', string)
                         txtCharIdx = txtCharIdx + 1
 
                     SSETText[ssetIdx] = [string, txtCharIdx, txtCharIdx + lenString, t ]
