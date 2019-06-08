@@ -1,0 +1,5 @@
+0	双	0	1	数字-Number-N
+1	下肢	1	3	身体部位-Body_Part-BP
+2	无	3	4	无-Absent-Ab
+3	浮肿	4	6	病理功能-Pathologic_Function-PF
+4	。	6	7	标点-Punctuation-Punc

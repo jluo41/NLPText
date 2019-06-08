@@ -1,0 +1,9 @@
+0	结合	0	2	事件-Event-E
+1	腹	2	3	身体部位-Body_Part-BP
+2	立位	3	5	空间概念-Spatial_Concept-Sp
+3	片	5	6	检查项目-Examination_Project-EP
+4	结果	6	8	发现-Finding-Find
+5	,	8	9	标点-Punctuation-Punc
+6	可	9	10	定性-Qualitative_Concep-Ql
+7	诊断	10	12	检查行为-Examination_Behavior-EB
+8	。	12	13	标点-Punctuation-Punc

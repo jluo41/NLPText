@@ -1,0 +1,6 @@
+0	1	0	1	数字-Number-N
+1	.	1	2	标点-Punctuation-Punc
+2	腰	2	3	身体部位-Body_Part-BP
+3	痛	3	4	病理功能-Pathologic_Function-PF
+4	查	4	5	检查行为-Examination_Behavior-EB
+5	因	5	6	因果-Causal_Or_Effect-CE

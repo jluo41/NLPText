@@ -1,0 +1,12 @@
+0	阴道	0	2	身体部位-Body_Part-BP
+1	通畅	2	4	定性-Qualitative_Concep-Ql
+2	,	4	5	标点-Punctuation-Punc
+3	中	5	6	定性-Qualitative_Concep-Ql
+4	量	6	7	临床属性-Clinical_Attribute-CA
+5	血	7	8	身体物质-BodySubstance-BS
+6	性	8	9	定性-Qualitative_Concep-Ql
+7	分泌物	9	12	身体物质-BodySubstance-BS
+8	,	12	13	标点-Punctuation-Punc
+9	无	13	14	无-Absent-Ab
+10	气味	14	16	临床属性-Clinical_Attribute-CA
+11	。	16	17	标点-Punctuation-Punc

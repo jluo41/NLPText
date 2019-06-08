@@ -1,0 +1,9 @@
+0	腹	0	1	身体部位-Body_Part-BP
+1	痛	1	2	病理功能-Pathologic_Function-PF
+2	查	2	3	检查行为-Examination_Behavior-EB
+3	因	3	4	因果-Causal_Or_Effect-CE
+4	:	4	5	发现-Finding-Find
+5	消化	5	7	定性-Qualitative_Concep-Ql
+6	性	7	8	定性-Qualitative_Concep-Ql
+7	溃疡	8	10	身体部位畸形-Body_Abnormality-Bab
+8	?	10	11	或许-Probability-Prob

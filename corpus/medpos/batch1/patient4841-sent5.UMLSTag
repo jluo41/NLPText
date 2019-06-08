@@ -1,0 +1,17 @@
+0	子宫	0	2	身体部位-Body_Part-BP
+1	前位	2	4	空间概念-Spatial_Concept-Sp
+2	,	4	5	标点-Punctuation-Punc
+3	正常	5	7	定性-Qualitative_Concep-Ql
+4	大小	7	9	临床属性-Clinical_Attribute-CA
+5	,	9	10	标点-Punctuation-Punc
+6	质	10	11	临床属性-Clinical_Attribute-CA
+7	中	11	12	定性-Qualitative_Concep-Ql
+8	,	12	13	标点-Punctuation-Punc
+9	活动	13	15	身体功能-Body_Function-BF
+10	度	15	16	临床属性-Clinical_Attribute-CA
+11	好	16	17	定性-Qualitative_Concep-Ql
+12	,	17	18	标点-Punctuation-Punc
+13	无	18	19	无-Absent-Ab
+14	压	19	20	检查行为-Examination_Behavior-EB
+15	痛	20	21	病理功能-Pathologic_Function-PF
+16	。	21	22	标点-Punctuation-Punc

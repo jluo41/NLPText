@@ -1,0 +1,9 @@
+0	1	0	1	数字-Number-N
+1	.	1	2	标点-Punctuation-Punc
+2	老年	2	4	人群-Group-Gr
+3	男性	4	6	人群-Group-Gr
+4	,	6	7	标点-Punctuation-Punc
+5	慢	7	8	定性-Qualitative_Concep-Ql
+6	性	8	9	定性-Qualitative_Concep-Ql
+7	病程	9	11	疾病-Disease-Di
+8	。	11	12	标点-Punctuation-Punc

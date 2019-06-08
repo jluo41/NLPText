@@ -1,0 +1,12 @@
+0	2	0	1	数字-Number-N
+1	.	1	2	标点-Punctuation-Punc
+2	妇科	2	4	地名机构名-Location_Organization-LO
+3	检查	4	6	检查项目-Examination_Project-EP
+4	:	6	7	发现-Finding-Find
+5	外阴	7	9	身体部位-Body_Part-BP
+6	已	9	10	时间概念-Temporal_Concept-T
+7	婚	10	11	事件-Event-E
+8	已	11	12	时间概念-Temporal_Concept-T
+9	产	12	13	身体功能-Body_Function-BF
+10	式	13	14	定性-Qualitative_Concep-Ql
+11	。	14	15	标点-Punctuation-Punc

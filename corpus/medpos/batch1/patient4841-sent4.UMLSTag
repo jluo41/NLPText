@@ -1,0 +1,16 @@
+0	宫颈	0	2	身体部位-Body_Part-BP
+1	光滑	2	4	定性-Qualitative_Concep-Ql
+2	,	4	5	标点-Punctuation-Punc
+3	正常	5	7	定性-Qualitative_Concep-Ql
+4	大小	7	9	临床属性-Clinical_Attribute-CA
+5	,	9	10	标点-Punctuation-Punc
+6	无	10	11	无-Absent-Ab
+7	接触	11	13	检查行为-Examination_Behavior-EB
+8	性	13	14	定性-Qualitative_Concep-Ql
+9	出	14	15	病理功能-Pathologic_Function-PF
+10	血	15	16	身体物质-BodySubstance-BS
+11	,	16	17	标点-Punctuation-Punc
+12	无	17	18	无-Absent-Ab
+13	举	18	19	检查行为-Examination_Behavior-EB
+14	痛	19	20	病理功能-Pathologic_Function-PF
+15	。	20	21	标点-Punctuation-Punc

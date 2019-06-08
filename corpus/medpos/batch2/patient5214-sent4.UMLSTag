@@ -1,0 +1,8 @@
+0	胎儿	0	2	身体部位-Body_Part-BP
+1	估	2	3	定性-Qualitative_Concep-Ql
+2	重	3	4	临床属性-Clinical_Attribute-CA
+3	:	4	5	发现-Finding-Find
+4	4000	5	9	数字-Number-N
+5	g	9	10	单位-Unit-U
+6	左右	10	12	数字-Number-N
+7	。	12	13	标点-Punctuation-Punc

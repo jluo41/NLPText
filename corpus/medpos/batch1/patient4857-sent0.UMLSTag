@@ -1,0 +1,14 @@
+0	心	0	1	身体部位-Body_Part-BP
+1	律	1	2	临床属性-Clinical_Attribute-CA
+2	失常	2	4	定性-Qualitative_Concep-Ql
+3	@	4	5	标点-Punctuation-Punc
+4	偶发	5	7	定性-Qualitative_Concep-Ql
+5	室	7	8	身体部位-Body_Part-BP
+6	性	8	9	定性-Qualitative_Concep-Ql
+7	期前	9	11	时间概念-Temporal_Concept-T
+8	收缩	11	13	身体功能-Body_Function-BF
+9	,	13	14	标点-Punctuation-Punc
+10	高	14	15	定性-Qualitative_Concep-Ql
+11	脂	15	16	身体物质-BodySubstance-BS
+12	血	16	17	身体物质-BodySubstance-BS
+13	症	17	18	体征与症状-Sign_Or_Symptom-SOS

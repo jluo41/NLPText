@@ -1,0 +1,9 @@
+0	高	0	1	定性-Qualitative_Concep-Ql
+1	血	1	2	身体物质-BodySubstance-BS
+2	压	2	3	临床属性-Clinical_Attribute-CA
+3	病	3	4	疾病-Disease-Di
+4	3	4	5	数字-Number-N
+5	级	5	6	单位-Unit-U
+6	@	6	7	标点-Punctuation-Punc
+7	高	7	8	定性-Qualitative_Concep-Ql
+8	危	8	9	定性-Qualitative_Concep-Ql

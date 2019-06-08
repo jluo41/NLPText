@@ -1,0 +1,12 @@
+0	1	0	1	数字-Number-N
+1	.	1	2	标点-Punctuation-Punc
+2	病	2	3	疾病-Disease-Di
+3	史	3	4	时间概念-Temporal_Concept-T
+4	:	4	5	发现-Finding-Find
+5	痛	5	6	病理功能-Pathologic_Function-PF
+6	经	6	7	身体功能-Body_Function-BF
+7	3	7	8	数字-Number-N
+8	月	8	9	时间单位-Time_Unit-TU
+9	加重	9	11	定性-Qualitative_Concep-Ql
+10	1	11	12	数字-Number-N
+11	月	12	13	时间单位-Time_Unit-TU

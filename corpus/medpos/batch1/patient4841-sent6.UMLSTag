@@ -1,0 +1,13 @@
+0	双	0	1	数字-Number-N
+1	侧	1	2	空间概念-Spatial_Concept-Sp
+2	附件	2	4	身体部位-Body_Part-BP
+3	区	4	5	空间概念-Spatial_Concept-Sp
+4	未	5	6	无-Absent-Ab
+5	扪	6	7	检查行为-Examination_Behavior-EB
+6	及	7	8	连词-Conjunction-Conj
+7	异常	8	10	定性-Qualitative_Concep-Ql
+8	,	10	11	标点-Punctuation-Punc
+9	无	11	12	无-Absent-Ab
+10	压	12	13	检查行为-Examination_Behavior-EB
+11	痛	13	14	病理功能-Pathologic_Function-PF
+12	。	14	15	标点-Punctuation-Punc

@@ -1,0 +1,17 @@
+0	宫体	0	2	身体部位-Body_Part-BP
+1	:	2	3	发现-Finding-Find
+2	子宫	3	5	身体部位-Body_Part-BP
+3	前位	5	7	空间概念-Spatial_Concept-Sp
+4	,	7	8	标点-Punctuation-Punc
+5	正常	8	10	定性-Qualitative_Concep-Ql
+6	大小	10	12	临床属性-Clinical_Attribute-CA
+7	,	12	13	标点-Punctuation-Punc
+8	质	13	14	临床属性-Clinical_Attribute-CA
+9	中	14	15	定性-Qualitative_Concep-Ql
+10	,	15	16	标点-Punctuation-Punc
+11	活动	16	18	身体功能-Body_Function-BF
+12	,	18	19	标点-Punctuation-Punc
+13	轻	19	20	定性-Qualitative_Concep-Ql
+14	压	20	21	检查行为-Examination_Behavior-EB
+15	痛	21	22	病理功能-Pathologic_Function-PF
+16	。	22	23	标点-Punctuation-Punc

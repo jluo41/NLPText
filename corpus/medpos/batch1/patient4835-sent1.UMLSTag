@@ -1,0 +1,15 @@
+0	1	0	1	数字-Number-N
+1	、	1	2	标点-Punctuation-Punc
+2	患者	2	4	人群-Group-Gr
+3	因	4	5	因果-Causal_Or_Effect-CE
+4	反复	5	7	定性-Qualitative_Concep-Ql
+5	头	7	8	身体部位-Body_Part-BP
+6	晕	8	9	定性-Qualitative_Concep-Ql
+7	10	9	11	数字-Number-N
+8	年	11	12	时间单位-Time_Unit-TU
+9	,	12	13	标点-Punctuation-Punc
+10	再	13	14	时间概念-Temporal_Concept-T
+11	发	14	15	病理功能-Pathologic_Function-PF
+12	3	15	16	数字-Number-N
+13	天	16	17	时间单位-Time_Unit-TU
+14	。	17	18	标点-Punctuation-Punc

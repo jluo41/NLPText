@@ -1,0 +1,15 @@
+0	急	0	1	定性-Qualitative_Concep-Ql
+1	性	1	2	定性-Qualitative_Concep-Ql
+2	化脓	2	4	病理功能-Pathologic_Function-PF
+3	性	4	5	定性-Qualitative_Concep-Ql
+4	扁桃体	5	8	身体部位-Body_Part-BP
+5	炎	8	9	疾病-Disease-Di
+6	,	9	10	标点-Punctuation-Punc
+7	胃	10	11	身体部位-Body_Part-BP
+8	肠	11	12	身体部位-Body_Part-BP
+9	功能	12	14	身体功能-Body_Function-BF
+10	紊乱	14	16	病理功能-Pathologic_Function-PF
+11	,	16	17	标点-Punctuation-Punc
+12	中	17	18	定性-Qualitative_Concep-Ql
+13	度	18	19	定性-Qualitative_Concep-Ql
+14	脱水	19	21	病理功能-Pathologic_Function-PF

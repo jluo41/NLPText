@@ -1,0 +1,10 @@
+0	腹	0	1	身体部位-Body_Part-BP
+1	软	1	2	定性-Qualitative_Concep-Ql
+2	,	2	3	标点-Punctuation-Punc
+3	无	3	4	无-Absent-Ab
+4	压	4	5	检查行为-Examination_Behavior-EB
+5	痛	5	6	病理功能-Pathologic_Function-PF
+6	及	6	7	连词-Conjunction-Conj
+7	反跳	7	9	检查行为-Examination_Behavior-EB
+8	痛	9	10	病理功能-Pathologic_Function-PF
+9	。	10	11	标点-Punctuation-Punc

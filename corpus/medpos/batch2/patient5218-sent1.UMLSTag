@@ -1,0 +1,9 @@
+0	患者	0	2	人群-Group-Gr
+1	33	2	4	数字-Number-N
+2	岁	4	5	时间单位-Time_Unit-TU
+3	女性	5	7	人群-Group-Gr
+4	,	7	8	标点-Punctuation-Punc
+5	缓	8	9	定性-Qualitative_Concep-Ql
+6	慢	9	10	定性-Qualitative_Concep-Ql
+7	起病	10	12	病理功能-Pathologic_Function-PF
+8	。	12	13	标点-Punctuation-Punc

@@ -1,0 +1,12 @@
+0	神志	0	2	身体功能-Body_Function-BF
+1	清楚	2	4	定性-Qualitative_Concep-Ql
+2	,	4	5	标点-Punctuation-Punc
+3	言语	5	7	身体功能-Body_Function-BF
+4	清晰	7	9	定性-Qualitative_Concep-Ql
+5	,	9	10	标点-Punctuation-Punc
+6	颅	10	11	身体部位-Body_Part-BP
+7	神经	11	13	身体部位-Body_Part-BP
+8	检查	13	15	检查项目-Examination_Project-EP
+9	无	15	16	无-Absent-Ab
+10	异常	16	18	定性-Qualitative_Concep-Ql
+11	。	18	19	标点-Punctuation-Punc

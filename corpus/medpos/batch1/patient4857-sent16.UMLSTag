@@ -1,0 +1,13 @@
+0	2014	0	4	数字-Number-N
+1	年	4	5	时间单位-Time_Unit-TU
+2	7	5	6	数字-Number-N
+3	月	6	7	时间单位-Time_Unit-TU
+4	15	7	9	数字-Number-N
+5	日	9	10	时间单位-Time_Unit-TU
+6	心	10	11	身体部位-Body_Part-BP
+7	电图	11	13	检查项目-Examination_Project-EP
+8	活动	13	15	身体功能-Body_Function-BF
+9	平板	15	17	检查仪器-Examination_Device-ED
+10	阴	17	18	定性-Qualitative_Concep-Ql
+11	性	18	19	定性-Qualitative_Concep-Ql
+12	。	19	20	标点-Punctuation-Punc

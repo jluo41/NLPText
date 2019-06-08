@@ -1,0 +1,8 @@
+0	慢	0	1	定性-Qualitative_Concep-Ql
+1	性	1	2	定性-Qualitative_Concep-Ql
+2	乙	2	3	定性-Qualitative_Concep-Ql
+3	型	3	4	临床属性-Clinical_Attribute-CA
+4	病毒	4	6	生物-Organism-Ogm
+5	性	6	7	定性-Qualitative_Concep-Ql
+6	肝	7	8	身体部位-Body_Part-BP
+7	炎	8	9	疾病-Disease-Di

@@ -1,0 +1,12 @@
+0	双	0	1	数字-Number-N
+1	肺	1	2	身体部位-Body_Part-BP
+2	呼吸	2	4	身体功能-Body_Function-BF
+3	音	4	5	临床属性-Clinical_Attribute-CA
+4	清晰	5	7	定性-Qualitative_Concep-Ql
+5	,	7	8	标点-Punctuation-Punc
+6	未	8	9	无-Absent-Ab
+7	闻	9	10	检查行为-Examination_Behavior-EB
+8	及	10	11	连词-Conjunction-Conj
+9	罗	11	12	定性-Qualitative_Concep-Ql
+10	音	12	13	临床属性-Clinical_Attribute-CA
+11	。	13	14	标点-Punctuation-Punc

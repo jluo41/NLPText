@@ -1,0 +1,7 @@
+0	2014	0	4	数字-Number-N
+1	年	4	5	时间单位-Time_Unit-TU
+2	5	5	6	数字-Number-N
+3	月	6	7	时间单位-Time_Unit-TU
+4	上	7	8	治疗行为-Treatment_Behavior-TB
+5	节育环	8	11	药物-Clinical_Drug-Drug
+6	。	11	12	标点-Punctuation-Punc

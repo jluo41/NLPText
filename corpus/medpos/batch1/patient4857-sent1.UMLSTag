@@ -1,0 +1,17 @@
+0	1	0	1	数字-Number-N
+1	、	1	2	标点-Punctuation-Punc
+2	患者	2	4	人群-Group-Gr
+3	因	4	5	因果-Causal_Or_Effect-CE
+4	反复	5	7	定性-Qualitative_Concep-Ql
+5	发作	7	9	病理功能-Pathologic_Function-PF
+6	心	9	10	身体部位-Body_Part-BP
+7	悸	10	11	病理功能-Pathologic_Function-PF
+8	10	11	13	数字-Number-N
+9	年	13	14	时间单位-Time_Unit-TU
+10	余	14	15	数字-Number-N
+11	,	15	16	标点-Punctuation-Punc
+12	加重	16	18	定性-Qualitative_Concep-Ql
+13	10	18	20	数字-Number-N
+14	余	20	21	数字-Number-N
+15	天	21	22	时间单位-Time_Unit-TU
+16	。	22	23	标点-Punctuation-Punc

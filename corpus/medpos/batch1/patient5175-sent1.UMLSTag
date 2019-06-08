@@ -1,0 +1,13 @@
+0	患者	0	2	人群-Group-Gr
+1	为	2	3	发现-Finding-Find
+2	中老年	3	6	人群-Group-Gr
+3	女性	6	8	人群-Group-Gr
+4	,	8	9	标点-Punctuation-Punc
+5	慢	9	10	定性-Qualitative_Concep-Ql
+6	性	10	11	定性-Qualitative_Concep-Ql
+7	病程	11	13	疾病-Disease-Di
+8	,	13	14	标点-Punctuation-Punc
+9	急	14	15	定性-Qualitative_Concep-Ql
+10	性	15	16	定性-Qualitative_Concep-Ql
+11	起病	16	18	病理功能-Pathologic_Function-PF
+12	。	18	19	标点-Punctuation-Punc

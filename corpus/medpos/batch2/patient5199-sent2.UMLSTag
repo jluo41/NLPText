@@ -1,0 +1,5 @@
+0	胃	0	1	身体部位-Body_Part-BP
+1	底	1	2	空间概念-Spatial_Concept-Sp
+2	隆起	2	4	定性-Qualitative_Concep-Ql
+3	病变	4	6	病理功能-Pathologic_Function-PF
+4	?	6	7	或许-Probability-Prob

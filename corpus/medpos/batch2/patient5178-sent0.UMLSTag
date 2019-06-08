@@ -1,0 +1,13 @@
+0	1	0	1	数字-Number-N
+1	、	1	2	标点-Punctuation-Punc
+2	子宫	2	4	身体部位-Body_Part-BP
+3	内膜	4	6	身体部位-Body_Part-BP
+4	异位	6	8	病理功能-Pathologic_Function-PF
+5	症	8	9	体征与症状-Sign_Or_Symptom-SOS
+6	,	9	10	标点-Punctuation-Punc
+7	2	10	11	数字-Number-N
+8	、	11	12	标点-Punctuation-Punc
+9	盆腔	12	14	身体部位-Body_Part-BP
+10	炎	14	15	疾病-Disease-Di
+11	性	15	16	定性-Qualitative_Concep-Ql
+12	疾病	16	18	疾病-Disease-Di

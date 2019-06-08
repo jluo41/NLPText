@@ -1,0 +1,11 @@
+0	③	0	1	数字-Number-N
+1	查	1	2	检查行为-Examination_Behavior-EB
+2	体	2	3	身体部位-Body_Part-BP
+3	:	3	4	发现-Finding-Find
+4	血	4	5	身体物质-BodySubstance-BS
+5	压	5	6	临床属性-Clinical_Attribute-CA
+6	147	6	9	数字-Number-N
+7	/	9	10	数学符号-Math_Symbols-MS
+8	74	10	12	数字-Number-N
+9	mmHg	12	16	单位-Unit-U
+10	。	16	17	标点-Punctuation-Punc

@@ -1,0 +1,9 @@
+0	腹	0	1	身体部位-Body_Part-BP
+1	部	1	2	空间概念-Spatial_Concept-Sp
+2	平坦	2	4	定性-Qualitative_Concep-Ql
+3	,	4	5	标点-Punctuation-Punc
+4	双	5	6	数字-Number-N
+5	下肢	6	8	身体部位-Body_Part-BP
+6	无	8	9	无-Absent-Ab
+7	浮肿	9	11	病理功能-Pathologic_Function-PF
+8	。	11	12	标点-Punctuation-Punc

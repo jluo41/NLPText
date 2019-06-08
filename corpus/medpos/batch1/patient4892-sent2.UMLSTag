@@ -1,0 +1,16 @@
+0	2	0	1	数字-Number-N
+1	.	1	2	标点-Punctuation-Punc
+2	因	2	3	因果-Causal_Or_Effect-CE
+3	'	3	4	发现-Finding-Find
+4	反复	4	6	定性-Qualitative_Concep-Ql
+5	腰	6	7	身体部位-Body_Part-BP
+6	痛	7	8	病理功能-Pathologic_Function-PF
+7	10	8	10	数字-Number-N
+8	年	10	11	时间单位-Time_Unit-TU
+9	,	11	12	标点-Punctuation-Punc
+10	加重	12	14	定性-Qualitative_Concep-Ql
+11	1	14	15	数字-Number-N
+12	月	15	16	时间单位-Time_Unit-TU
+13	'	16	17	发现-Finding-Find
+14	入院	17	19	事件-Event-E
+15	。	19	20	标点-Punctuation-Punc

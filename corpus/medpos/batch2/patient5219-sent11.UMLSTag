@@ -1,0 +1,6 @@
+0	血	0	1	身体物质-BodySubstance-BS
+1	常规	1	3	检查项目-Examination_Project-EP
+2	未	3	4	无-Absent-Ab
+3	提示	4	6	发现-Finding-Find
+4	异常	6	8	定性-Qualitative_Concep-Ql
+5	。	8	9	标点-Punctuation-Punc

@@ -1,0 +1,5 @@
+0	周围	0	2	空间概念-Spatial_Concept-Sp
+1	血管	2	4	身体部位-Body_Part-BP
+2	征	4	5	体征与症状-Sign_Or_Symptom-SOS
+3	阴性	5	7	无-Absent-Ab
+4	。	7	8	标点-Punctuation-Punc

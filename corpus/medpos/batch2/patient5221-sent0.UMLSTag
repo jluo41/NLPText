@@ -1,0 +1,14 @@
+0	急	0	1	定性-Qualitative_Concep-Ql
+1	性	1	2	定性-Qualitative_Concep-Ql
+2	脑	2	3	身体部位-Body_Part-BP
+3	梗死	3	5	病理功能-Pathologic_Function-PF
+4	,	5	6	标点-Punctuation-Punc
+5	高	6	7	定性-Qualitative_Concep-Ql
+6	血	7	8	身体物质-BodySubstance-BS
+7	压	8	9	临床属性-Clinical_Attribute-CA
+8	病	9	10	疾病-Disease-Di
+9	3	10	11	数字-Number-N
+10	级	11	12	单位-Unit-U
+11	@	12	13	标点-Punctuation-Punc
+12	高	13	14	定性-Qualitative_Concep-Ql
+13	危	14	15	定性-Qualitative_Concep-Ql

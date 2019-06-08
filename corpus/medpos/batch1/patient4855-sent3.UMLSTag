@@ -1,0 +1,6 @@
+0	既往	0	2	时间概念-Temporal_Concept-T
+1	有	2	3	有-Present-Pre
+2	阑尾	3	5	身体部位-Body_Part-BP
+3	切除	5	7	治疗行为-Treatment_Behavior-TB
+4	史	7	8	时间概念-Temporal_Concept-T
+5	。	8	9	标点-Punctuation-Punc

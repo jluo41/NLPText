@@ -1,0 +1,9 @@
+0	双	0	1	数字-Number-N
+1	侧	1	2	空间概念-Spatial_Concept-Sp
+2	肢体	2	4	身体部位-Body_Part-BP
+3	痛	4	5	病理功能-Pathologic_Function-PF
+4	温	5	6	临床属性-Clinical_Attribute-CA
+5	觉	6	7	身体功能-Body_Function-BF
+6	对称	7	9	定性-Qualitative_Concep-Ql
+7	正常	9	11	定性-Qualitative_Concep-Ql
+8	。	11	12	标点-Punctuation-Punc

@@ -1,0 +1,17 @@
+0	肝	0	1	身体部位-Body_Part-BP
+1	右	1	2	空间概念-Spatial_Concept-Sp
+2	肋	2	3	身体部位-Body_Part-BP
+3	缘	3	4	空间概念-Spatial_Concept-Sp
+4	下	4	5	空间概念-Spatial_Concept-Sp
+5	情况	5	7	发现-Finding-Find
+6	未	7	8	无-Absent-Ab
+7	触	8	9	检查行为-Examination_Behavior-EB
+8	及	9	10	连词-Conjunction-Conj
+9	,	10	11	标点-Punctuation-Punc
+10	腹	11	12	身体部位-Body_Part-BP
+11	部	12	13	空间概念-Spatial_Concept-Sp
+12	血管	13	15	身体部位-Body_Part-BP
+13	杂	15	16	定性-Qualitative_Concep-Ql
+14	音	16	17	临床属性-Clinical_Attribute-CA
+15	无	17	18	无-Absent-Ab
+16	。	18	19	标点-Punctuation-Punc

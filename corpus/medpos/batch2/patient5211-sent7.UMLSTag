@@ -1,0 +1,10 @@
+0	C	0	1	定性-Qualitative_Concep-Ql
+1	-	1	2	连词-Conjunction-Conj
+2	反应	2	4	身体功能-Body_Function-BF
+3	蛋白	4	6	身体物质-BodySubstance-BS
+4	:	6	7	发现-Finding-Find
+5	9	7	8	数字-Number-N
+6	mg	8	10	单位-Unit-U
+7	/	10	11	数学符号-Math_Symbols-MS
+8	L	11	12	单位-Unit-U
+9	。	12	13	标点-Punctuation-Punc

@@ -1,0 +1,17 @@
+0	1	0	1	数字-Number-N
+1	.	1	2	标点-Punctuation-Punc
+2	病	2	3	疾病-Disease-Di
+3	史	3	4	时间概念-Temporal_Concept-T
+4	:	4	5	发现-Finding-Find
+5	患者	5	7	人群-Group-Gr
+6	因	7	8	因果-Causal_Or_Effect-CE
+7	“	8	9	发现-Finding-Find
+8	下	9	10	空间概念-Spatial_Concept-Sp
+9	腹	10	11	身体部位-Body_Part-BP
+10	疼痛	11	13	病理功能-Pathologic_Function-PF
+11	2	13	14	数字-Number-N
+12	+	14	15	数学符号-Math_Symbols-MS
+13	小时	15	17	时间单位-Time_Unit-TU
+14	”	17	18	发现-Finding-Find
+15	入院	18	20	事件-Event-E
+16	。	20	21	标点-Punctuation-Punc

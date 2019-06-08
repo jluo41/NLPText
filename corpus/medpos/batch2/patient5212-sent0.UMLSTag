@@ -1,0 +1,15 @@
+0	1	0	1	数字-Number-N
+1	、	1	2	标点-Punctuation-Punc
+2	急	2	3	定性-Qualitative_Concep-Ql
+3	性	3	4	定性-Qualitative_Concep-Ql
+4	咽	4	5	身体部位-Body_Part-BP
+5	炎	5	6	疾病-Disease-Di
+6	@	6	7	标点-Punctuation-Punc
+7	@	7	8	标点-Punctuation-Punc
+8	2	8	9	数字-Number-N
+9	、	9	10	标点-Punctuation-Punc
+10	I	10	11	数字-Number-N
+11	型	11	12	临床属性-Clinical_Attribute-CA
+12	糖	12	13	身体物质-BodySubstance-BS
+13	尿	13	14	身体物质-BodySubstance-BS
+14	病	14	15	疾病-Disease-Di

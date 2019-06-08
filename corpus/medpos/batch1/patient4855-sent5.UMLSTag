@@ -1,0 +1,13 @@
+0	咽	0	1	身体部位-Body_Part-BP
+1	无	1	2	无-Absent-Ab
+2	充	2	3	病理功能-Pathologic_Function-PF
+3	血	3	4	身体物质-BodySubstance-BS
+4	,	4	5	标点-Punctuation-Punc
+5	双	5	6	数字-Number-N
+6	侧	6	7	空间概念-Spatial_Concept-Sp
+7	扁桃体	7	10	身体部位-Body_Part-BP
+8	未	10	11	无-Absent-Ab
+9	见	11	12	检查行为-Examination_Behavior-EB
+10	明显	12	14	定性-Qualitative_Concep-Ql
+11	肿大	14	16	病理功能-Pathologic_Function-PF
+12	。	16	17	标点-Punctuation-Punc

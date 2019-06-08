@@ -1,0 +1,15 @@
+0	高	0	1	定性-Qualitative_Concep-Ql
+1	血	1	2	身体物质-BodySubstance-BS
+2	压	2	3	检查行为-Examination_Behavior-EB
+3	病	3	4	疾病-Disease-Di
+4	2	4	5	数字-Number-N
+5	级	5	6	单位-Unit-U
+6	@	6	7	标点-Punctuation-Punc
+7	极	7	8	定性-Qualitative_Concep-Ql
+8	高	8	9	定性-Qualitative_Concep-Ql
+9	危	9	10	定性-Qualitative_Concep-Ql
+10	,	10	11	标点-Punctuation-Punc
+11	子宫	11	13	身体部位-Body_Part-BP
+12	切除	13	15	治疗行为-Treatment_Behavior-TB
+13	术	15	16	治疗项目-Treatment_Project-TP
+14	后	16	17	时间概念-Temporal_Concept-T

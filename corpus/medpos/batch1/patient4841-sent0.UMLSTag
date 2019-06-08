@@ -1,0 +1,13 @@
+0	1	0	1	数字-Number-N
+1	、	1	2	标点-Punctuation-Punc
+2	子宫	2	4	身体部位-Body_Part-BP
+3	内膜	4	6	身体部位-Body_Part-BP
+4	增殖	6	8	病理功能-Pathologic_Function-PF
+5	症	8	9	体征与症状-Sign_Or_Symptom-SOS
+6	?	9	10	或许-Probability-Prob
+7	,	10	11	标点-Punctuation-Punc
+8	2	11	12	数字-Number-N
+9	.	12	13	标点-Punctuation-Punc
+10	子宫	13	15	身体部位-Body_Part-BP
+11	肌	15	16	身体部位-Body_Part-BP
+12	瘤	16	17	身体部位畸形-Body_Abnormality-Bab

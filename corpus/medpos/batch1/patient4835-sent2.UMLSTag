@@ -1,0 +1,13 @@
+0	入院	0	2	事件-Event-E
+1	,	2	3	标点-Punctuation-Punc
+2	为	3	4	发现-Finding-Find
+3	中年	4	6	人群-Group-Gr
+4	女性	6	8	人群-Group-Gr
+5	,	8	9	标点-Punctuation-Punc
+6	慢	9	10	定性-Qualitative_Concep-Ql
+7	性	10	11	定性-Qualitative_Concep-Ql
+8	病程	11	13	疾病-Disease-Di
+9	急	13	14	定性-Qualitative_Concep-Ql
+10	性	14	15	定性-Qualitative_Concep-Ql
+11	发作	15	17	病理功能-Pathologic_Function-PF
+12	。	17	18	标点-Punctuation-Punc
