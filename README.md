@@ -5,8 +5,8 @@
 ├── corpus.py
 ├── folder.py
 ├── text.py
-├── token.py
 ├── sentence.py
+├── token.py
 └── utils
     ├── channel.py
     ├── grain.py

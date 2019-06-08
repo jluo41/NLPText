@@ -5,30 +5,12 @@ from pprint import pprint
 from datetime import datetime
 import numpy as np
 
-# INIT
-# ## pyramid
-# from .utils import CorpusFoldersReader, FolderTextsReaders
-# from .utils import reCutText2Sent, segText2Sents, segSent2Tokens# (text, method = 'whole')
-# from .utils import getCITText, getCITSents
-# from .channel import buildTokens, get_LGU_or_LT
-# from .utils import getChannelSettingsAndFolderName
-
 from .utils.pyramid import CorpusFoldersReader, FolderTextsReaders
 from .utils.pyramid import segText2Sents, segSent2Tokens, getCITText, getCITSents, getSSET_from_CIT
 from .utils.pyramid import buildTokens, get_LGU_or_LT, get_Channel_Settings, getSSET_from_CIT
 
-# ## channel
-# from .utils import getChannelName, getTagDict
-# from .channel import CONTEXT_IND_CHANNELS, CONTEXT_DEP_CHANNELS, ANNO_CHANNELS, CHANNEL_ABBR
-# from .channel import Channel_Dep_Methods, Channel_Dep_TagSets
-
 from .utils.channel import CONTEXT_IND_CHANNELS, CONTEXT_DEP_CHANNELS, ANNO_CHANNELS, CHANNEL_ABBR
 from .utils.channel import getChannelName, getTagDict, Channel_Dep_Methods, Channel_Dep_TagSets, trans_bioesTag
-
-
-# ## infrastructure
-# from .utils import writeGrainList2File, readFile2GrainList, readPickleFile2GrainUnique, List
-# from .channel import specialTokens, UNK_ID  
 
 from .utils.infrastructure import writeGrainList2File, readPickleFile2GrainUnique, specialTokens, UNK_ID
 from .utils.infrastructure import modify_wordBoundary_with_hyperBoundary, trans_charLabels_to_wordLabels
@@ -343,9 +325,6 @@ class BasicObject(object):
                 # writeGrainList2File(channel_name_path, GrainUnique[0])
                 # print('\t\tWrite to:', channel_name_path)
         ########################################################
-
-
-
 
         CORPUS['EndIDXFolders'] = np.array(CORPUS['EndIDXFolders'], dtype = np.uint32)
         CORPUS['length']        = len(CORPUS['EndIDXFolders'])

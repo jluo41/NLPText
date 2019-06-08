@@ -5,7 +5,6 @@ import numpy as np
 from .channel import Channel_Ind_Methods, Channel_Dep_Methods
 from .infrastructure import specialTokens
 
-
 def getGrainNgrams(subword_infos, n):
     # Here N is the Num for n_gram
     #     subword_infos: [subcomp1, subcomp2, ...] or [stroke1, stroke2, ...]

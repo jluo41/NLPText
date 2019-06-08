@@ -62,8 +62,7 @@ class Sentence(BasicObject):
             return channelGrain
 
         
-    def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', useStartEnd = False, end_grain = False, 
-                       TokenNum_Dir = None, channel_name = None, dontUseLookUp = False):
+    def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', useStartEnd = False, end_grain = False, TokenNum_Dir = None, channel_name = None, dontUseLookUp = False):
         
         # BUG to Fix: Error with useStartEnd = True
         if channel == 'token':
