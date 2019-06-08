@@ -7,10 +7,21 @@ from datetime import datetime
 
 from .channel import getChannelName
 from .grain import getChannelGrain4Token
-from .infrastructure import UNK_ID, specialTokens, specialTokensDict, strQ2B, fileReader
+from .infrastructure import UNK, UNK_ID, specialTokens, specialTokensDict, strQ2B, fileReader
 
 ##################################################################################################CORPUS-FOLDER
-# Important One
+# Important One 
+
+def CorpusFoldersReader(CORPUSPath, iden = None):
+    # file is the priority
+    if iden:
+        corpusFiles = [i for i in os.listdir(CORPUSPath) if iden in i]
+        return {os.path.join(CORPUSPath, fd): '' for fd in corpusFiles}, 'File'
+    else:
+        results = [x for x in os.walk(CORPUSPath) if x[2]]
+        return {i[0]: i[2] for i in results},                            'Dir'
+
+        
 def geneTextFilePaths(corpusPath, orig_iden = '.txt', anno_iden = None):
     FolderNames = [i for i in np.sort(os.listdir(corpusPath)) if i[0] != '.']
     # print(FolderNames)
@@ -29,14 +40,7 @@ def geneTextFilePaths(corpusPath, orig_iden = '.txt', anno_iden = None):
         FolderDict[foldername] = OrigFileList, AnnoFileList
     return FolderDict
 
-def CorpusFoldersReader(CORPUSPath, iden = None):
-    # file is the priority
-    if iden:
-        corpusFiles = [i for i in os.listdir(CORPUSPath) if iden in i]
-        return {os.path.join(CORPUSPath, fd): '' for fd in corpusFiles}, 'File'
-    else:
-        results = [x for x in os.walk(CORPUSPath) if x[2]]
-        return {i[0]: i[2] for i in results},                            'Dir'
+
 ##################################################################################################CORPUS-FOLDER
 
 
@@ -200,24 +204,41 @@ FolderTextsReaders = {
 ##################################################################################################FOLDER-TEXT
 
 
+import re
 
 ##################################################################################################TEXT-SENT
 def reCutText2Sent(text, useSep = False):
     
+    
+    ###################### Remove some weird chars #######################
     text = re.sub('\xa0', '', text)
+    
+    ############# The Issue of Spaces
+    ###################### Convert the Spaces between two English Letters to 'ⴷ' #################
     # Take care of Spaces
+    text = re.sub(r'(?<=[A-Za-z])\s+(?=[|A-Za-z])', 'ⴷ',  text)
+    
+    ###################### Convert the S+ spaces to '〰' #################
     text = re.sub(' {2}', '〰', text ).strip()
     if useSep == ' ':
+        # if using space to sep the words
         text = text.replace('\t','').replace('〰', ' ')
     elif useSep == '\t':
+        # if using tab to sep the words, removing all spaces
         text = text.replace(' ','').replace('〰', '')
     else:
+        # if there is no sep char for Chinese, remove single space, and then convert space+ to single space
         text = text.replace('\t','').replace(' ', '',).replace('〰', ' ')
-
+        
+    # convert the spaces between English letters to single spaces
+    text = text.replace('ⴷ', ' ')
+    
     # Other Things
-    text = re.sub('([。！;；])([^”])', r"\1\n\2",text) 
-    text = re.sub('(\.{6})([^”])', r"\1\n\2",text) 
-    text = re.sub('(\…{2})([^”])', r"\1\n\2",text)
+    text = re.sub('([。！;；])([^”])',  r"\1\n\2",text) 
+    text = re.sub('(\.{6})([^”])',     r"\1\n\2",text) 
+    text = re.sub('(\…{2})([^”])',     r"\1\n\2",text)
+    
+    # The \n within " " is not considered
     text = '"'.join( [ x if i % 2 == 0 else x.replace('\n', '') 
                          for i, x in enumerate(text.split('"'))] )
     text = re.sub( '\n+', '\n', text ).strip() # replace '\n+' to '\n'
@@ -226,6 +247,8 @@ def reCutText2Sent(text, useSep = False):
     text = [sent.strip() for sent in text]
     # text = [sent.replace(' ', '').replace('\\n', '') for sent in text]
     return [sent for sent in text if len(sent)>=2]
+
+
 
 
 def lineCutText2Sent(fullfilepath):
@@ -307,9 +330,27 @@ def getCITSents(strSents, CITText):
     # Here we get CITSents  
     return CITSents
 
-def getSSET_from_CIT(orig_seq, tag_seq):
+
+       
+def getSSET_from_CIT(orig_seq, tag_seq, tag_seq_tagScheme = 'BIO', join_char = ''):
+    # orig_seq is sentence without start or end
+    # tag_seq may have start or end
     if tag_seq[0] == '</start>':
         tag_seq = tag_seq[1:-1]
+        
+    tagScheme = tag_seq_tagScheme
+    if tagScheme == 'BIOES':
+        tag_seq = [i.replace('-S', '-B').replace('-E', '-I') for i in tag_seq]
+    elif tagScheme == 'BIOE':
+        tag_seq = [i.replace('-E', '-I') for i in tag_seq]
+    elif tagScheme == 'BIOS':
+        tag_seq = [i.replace('-S', '-B') for i in tag_seq]
+    elif tagScheme == 'BIO':
+        pass
+    else:
+        print('The tagScheme', tagScheme, 'is not supported yet...')
+    
+    # use BIO tagScheme
     CIT = list(zip(orig_seq, range(len(orig_seq)), tag_seq))
     taggedCIT = [cit for cit in CIT if cit[2]!= 'O']
     
@@ -319,12 +360,19 @@ def getSSET_from_CIT(orig_seq, tag_seq):
     entitiesList = []
     for i in range(len(startIdx)-1):
         entityAtom = taggedCIT[startIdx[i]: startIdx[i+1]]
-        string = ''.join([cit[0] for cit in entityAtom])
+        string = join_char.join([cit[0] for cit in entityAtom])
         start, end = entityAtom[0][1], entityAtom[-1][1] + 1
         tag = entityAtom[0][2].split('-')[0]
         entitiesList.append((string, start, end, tag))
         
-    return orig_seq, tag_seq
+        
+    # if join_char == '*':
+    #     a = [set([t.split('-')[0] for t in i[0].split('*')]) for i in entitiesList]
+    #     for i in a:
+    #         if len(i) > 1:
+    #             pprint(list(zip(orig_seq, tag_seq)))
+                
+    return entitiesList
 ##################################################################################################TEXT-ANNO
 
 
@@ -359,17 +407,25 @@ def buildTokens(tokenList, MaxTokenUnique = None):
 
     print('Generating Dictionary of Token Unique...\t', datetime.now())
     DTU = specialTokensDict.copy()
-    for token, _ in count:
+    DTU_freq = {sp_tk: 0 for sp_tk in specialTokens}
+    for token, freq in count:
         if token is not specialTokens:
             DTU[token] = len(DTU)
+            DTU_freq[token] = freq
+        else:
+            DTU_freq[token] = DTU_freq[token] + 1
 
 
     print('\t\tThe length of DTU is:', len(DTU), '\t', datetime.now())
     print('Generating the ORIGTokenIndex...       \t', datetime.now())
-    data = np.zeros(len(tokenList), dtype=int)
+    data = np.zeros(len(tokenList), dtype = np.uint32)
     # data = []
     for idx, token in enumerate(tokenList):
-        data[idx] = DTU.get(token, UNK_ID)
+        voc_id = DTU.get(token, UNK_ID)
+        data[idx] = voc_id
+        if voc_id == UNK_ID:
+            DTU_freq[UNK] = DTU_freq[UNK] + 1
+
         # data.append(DTU.get(token,UNK_ID))
         if idx % 5000000 == 0:
             print('\t\tThe idx of token is:', idx, '\t', datetime.now())
@@ -380,18 +436,19 @@ def buildTokens(tokenList, MaxTokenUnique = None):
         print('Only Keep First', MaxTokenUnique, 'Tokens.')
         print('The coverage rate is:', np.bincount(data)[UNK_ID]/total_len_token)
     # data = np.array(data)
-    return data, LTU, DTU
+    return data, LTU, DTU, DTU_freq
 ##################################################################################################TOKEN_LTU
 
 
 
 ##################################################################################################CHANNEL_SETTINGS
-def getChannelSettingsAndFolderName(CHANNEL_SETTINGS_TEMPLATE):
+def get_Channel_Settings(CHANNEL_SETTINGS_TEMPLATE):
+    d = CHANNEL_SETTINGS_TEMPLATE.copy()
     try:
-        CHANNEL_SETTINGS = {channel: CHANNEL_SETTINGS_TEMPLATE[channel] for channel in CHANNEL_SETTINGS_TEMPLATE 
-                            if CHANNEL_SETTINGS_TEMPLATE[channel].pop('use') == True}
+        CHANNEL_SETTINGS = {channel: d[channel] for channel in d 
+                            if d[channel].pop('use') == True}
     except:
-        CHANNEL_SETTINGS = CHANNEL_SETTINGS_TEMPLATE
+        CHANNEL_SETTINGS = {k:v for k, v in d.items()}
 
     nameList = []
 
@@ -404,7 +461,7 @@ def getChannelSettingsAndFolderName(CHANNEL_SETTINGS_TEMPLATE):
         tagSet       = channel_setting.get('tagSet',    None)
         tagScheme    = channel_setting.get('tagScheme', 'BIO')
 
-        channel_name_abbr = getChannelName(channel, Max_Ngram, tagScheme, end_grain, abbr = True)
+        channel_name_abbr = getChannelName(channel, Max_Ngram, end_grain, tagScheme, style = 'abbr')
         nameList.append(channel_name_abbr)
     
     folderName = '_'.join(nameList)
@@ -422,7 +479,6 @@ def get_LGU_or_LT(TokenUnique, channel= 'char',
 
     # ListGrainUnique = []
     
-
     LTU, DTU = TokenUnique
     num_specialtokens = len(specialTokens)
     assert LTU[:num_specialtokens] == specialTokens
@@ -439,10 +495,9 @@ def get_LGU_or_LT(TokenUnique, channel= 'char',
     print('For channel: |', channel, '| build GrainUnique and LookUp')
     for idx, token in enumerate(LTU[num_specialtokens:]):
         ChN = getChannelGrain4Token(token, channel, Max_Ngram= Max_Ngram, end_grain = end_grain)
-        # new_grains = list(set(ChN) - set(ListGrainUnique))
         new_grains = [i for i in set(ChN) if i not in DictGrainUnique]
-        # print(new_grains)
-        # ListGrainUnique = ListGrainUnique + new_grains
+        new_grains.sort() # make sure to keep the order
+
         for stk in new_grains:
             DictGrainUnique[stk] = len(DictGrainUnique)
         LookUp.append([DictGrainUnique.get(gr) for gr in ChN])

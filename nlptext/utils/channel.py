@@ -1,3 +1,4 @@
+import os
 import re
 import pickle
 import string
@@ -140,6 +141,25 @@ def charGrainChar(char, end_grain = False):
 
 
 
+with open('nlptext/sources/CharPinyin.p', 'rb') as handle:
+    CharPinyinInfos = pickle.load(handle)
+
+def pinyinGrainChar(char, end_grain = False):
+    '''char level only!'''
+    if char in CharPinyinInfos:
+        info = CharPinyinInfos[char]
+        if info:
+            info = [i for i in info ]
+        else:
+            info = ['po'] 
+    else:
+        info = [char]
+        
+    if end_grain:
+        info = info + ['y0']
+    return info
+
+
 ################## FOR THE CONTEXT-DEPENDENT CHANNELS ################
 posTag = ['a', 'ad', 'ag', 'an', 'b', 'c', 'd', 'df', 'dg', 'e', 'eng', 
           'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'mg', 'mq', 'n', 'ng', 'nr', 'nrfg', 
@@ -187,11 +207,11 @@ def POSGrainSent(sent, tokenLevel = 'word', useStartEnd = False, tagScheme = 'BI
 ##################################################################
 
 ################################################################################################
-CONTEXT_IND_CHANNELS    = ['basic', 'medical', 'radical', 'token', 'char', 'subcomp', 'stroke']
+CONTEXT_IND_CHANNELS    = ['basic', 'medical', 'radical', 'token', 'char', 'subcomp', 'stroke', 'pinyin']
 CONTEXT_DEP_CHANNELS    = ['pos']
 ANNO_CHANNELS           = ['annoR', 'annoE']
 
-CONTEXT_IND_CHANNELS_AB = ['b', 'm', 'r',  'T', 'C', 'c', 's']
+CONTEXT_IND_CHANNELS_AB = ['b', 'm', 'r',  'T', 'C', 'c', 's', 'y']
 CONTEXT_DEP_CHANNELS_AB = ['P']
 ANNO_CHANNELS_AB        = ['R', 'E']
 
@@ -209,6 +229,7 @@ Channel_Ind_Methods ={
     'radical':radicalGrainChar,
     'subcomp':subcompGrainChar,
     'stroke':strokeGrainChar,
+    'pinyin':pinyinGrainChar,
 }
 
 Channel_Dep_Methods = {'pos': POSGrainSent}
@@ -217,16 +238,78 @@ Channel_Dep_TagSets = {'pos': posTag}
 
 
 
-def getChannelName(channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, abbr = False):
+def getChannelName(channel, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO', style = 'normal',
+                   channel_name = None, channel_name_abbr = None, **kwargs):
 
-    channel = CHANNEL_ABBR[channel] if abbr else channel
+    if style == 'normal':
+        MN = str(Max_Ngram) if Max_Ngram > 1 else ''
+        e  = 'e'            if end_grain else ''
+        tS = '-' + tagScheme.replace('BIO', '').lower() if tagScheme != 'BIO' else ''
+        return channel + MN + e + tS
 
-    MN = str(Max_Ngram) if Max_Ngram > 1 else ''
-    e  = 'e'            if end_grain else ''
+    elif style == 'abbr':
+        channel = CHANNEL_ABBR[channel] # if abbr else channel
+        MN = str(Max_Ngram) if Max_Ngram > 1 else ''
+        e  = 'e'            if end_grain else ''
+        tS = '-' + tagScheme.replace('BIO', '').lower() if tagScheme != 'BIO' else ''
+        return channel + MN + e + tS
 
-    tS = str(len(tagScheme)) if abbr and tagScheme != 'BIO' else '-' + tagScheme.lower() if tagScheme != 'BIO' else ''  
+    elif channel_name and style == 'extract':
+        assert channel in channel_name
+        MN_e_tS = channel_name[len(channel):]
+        if len(MN_e_tS) == 0:
+            return channel, Max_Ngram, end_grain, tagScheme
+        if MN_e_tS[0] in '23456789':
+            Max_Ngram = int(MN_e_tS[0])
+            e_ts = MN_e_tS[1:]
+            if len(e_ts) == 0:
+                return channel, Max_Ngram, end_grain, tagScheme
+        else:
+            Max_Ngram = 1
+            e_ts = MN_e_tS
+        
+        if e_ts[0] == 'e':
+            end_grain = True
+            ts = e_ts[1:]
+        else:
+            end_grain = False
+            ts = e_ts
+        if ts.upper() in ['-ES', '-E', '-S']:
+            tagScheme = 'BIO' + ts.upper()[1:]
+        else:
+            tagScheme = 'BIO'
+        return channel, Max_Ngram, end_grain, tagScheme
+        
+    elif channel_name_abbr and style == 'extract':
+        channel_abbr = CHANNEL_ABBR[channel]
+        MN_e_tS = channel_name_abbr[len(channel_abbr): ]
+        if len(MN_e_tS) == 0:
+            return channel, Max_Ngram, end_grain, tagScheme
+        if MN_e_tS[0] in '23456789':
+            Max_Ngram = int(MN_e_tS[0])
+            e_ts = MN_e_tS[1:]
+            if len(e_ts) == 0:
+                return channel, Max_Ngram, end_grain, tagScheme
+        else:
+            Max_Ngram = 1
+            e_ts = MN_e_tS
+        
+        if e_ts[0] == 'e':
+            end_grain = True
+            ts = e_ts[1:]
+        else:
+            end_grain = False
+            ts = e_ts
+        if ts.upper() in ['-ES', '-E', '-S']:
+            tagScheme = 'BIO' + ts.upper()[1:]
+        else:
+            tagScheme = 'BIO'
+        
+        return channel, Max_Ngram, end_grain, tagScheme
 
-    return channel + MN + e + tS
+    else:
+        print('Error in getChannelName')
+    
 
 def getTagDict(TagList, tagScheme = 'BIO'):
     L = []
@@ -249,6 +332,27 @@ def getTagDict(TagList, tagScheme = 'BIO'):
     L = pref + L
     
     return L
+
+
+def trans_bioesTag(channel, bioesTag, tagScheme):
+
+    if bioesTag in specialTokens:
+        return bioesTag
+
+    if 'S' not in tagScheme and 'E' not in tagScheme:
+        i = bioesTag.replace('-S', '-B').replace('-E', '-I')
+    elif 'S' not in tagScheme:
+        i = bioesTag.replace('-S', '-B')
+    elif 'E' not in tagScheme:
+        i = bioesTag.replace('-E', '-I')
+    else:
+        i = bioesTag
+
+    if channel == 'annoR':
+        return i.split('-')[-1] 
+    else:
+        return i
+
 
 
 def extractEmbedPath2Info(embed_path, channel = None):
