@@ -8,7 +8,6 @@
 ├── token.py
 ├── sentence.py
 └── utils
-	├── __init__.py
     ├── channel.py
     ├── grain.py
     ├── infrastructure.py
