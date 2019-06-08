@@ -73,12 +73,10 @@ class BasicObject(object):
     ANNO_CHANNELS        = ANNO_CHANNELS
     CHANNEL_ABBR         = CHANNEL_ABBR
 
+
     BIOES_Trans = {}
     CTX_DEP_TMP = {}
-
-
     BATCH_INFO = {}
-
 
     def __init__(self):
         pass
@@ -188,8 +186,6 @@ class BasicObject(object):
                     except:
                         SENT['EndIDXTokens'].append(lenSent)
 
-                
-                
                 if anno and TOKENLevel == 'char': # TODO
                     #########################################################Anno
                     for sset in SSETText:
@@ -202,7 +198,7 @@ class BasicObject(object):
                         print('\nThe SSET of this Text is Empty!!!', '\n', strText, '\n')
                             
                     ############### PART One: Get CITText ###########
-                    CITText = getCITText(strText, SSETText)
+                    CITText  = getCITText(strText, SSETText)
                     #################################################          
                         
                     ############### PART TWO: Get CITSents ##########
@@ -301,9 +297,9 @@ class BasicObject(object):
         # token GrainUnique (TokenUnique)
         GRAIN_UNI = {}
         GRAIN_UNI[TokenNum_Dir] = {'token': (LTU, DTU)}
-        channel_name_path = os.path.join(TokenNum_Dir, 'token.tsv')
-        writeGrainList2File(channel_name_path, LTU)
-        print('\t\tWrite to:', channel_name_path)
+        # channel_name_path = os.path.join(TokenNum_Dir, 'token.tsv')
+        # writeGrainList2File(channel_name_path, LTU)
+        # print('\t\tWrite to:', channel_name_path)
         ########################################################
 
         ########################################################
@@ -316,9 +312,9 @@ class BasicObject(object):
             GU = (LGU, DGU)
             GRAIN_UNI[TokenNum_Dir][channel_name] = GU
             # cls.Build_BIOES_Trans('annoE', 'BIOES', GU, GU)
-            channel_name_path = os.path.join(TokenNum_Dir, channel_name+ '.tsv')
-            writeGrainList2File(channel_name_path, LGU)
-            print('\t\tWrite to:', channel_name_path)
+            # channel_name_path = os.path.join(TokenNum_Dir, channel_name+ '.tsv')
+            # writeGrainList2File(channel_name_path, LGU)
+            # print('\t\tWrite to:', channel_name_path)
 
             print(LGU)
             
@@ -343,9 +339,9 @@ class BasicObject(object):
                 # DGU = dict(zip(LGU, range(len(LGU))))
                 GRAIN_UNI[TokenNum_Dir][channel_name] = GrainUnique
                 # cls.Build_BIOES_Trans(ch, 'BIOES', GrainUnique, GrainUnique)
-                channel_name_path = os.path.join(TokenNum_Dir, channel_name+ '.tsv')
-                writeGrainList2File(channel_name_path, GrainUnique[0])
-                print('\t\tWrite to:', channel_name_path)
+                # channel_name_path = os.path.join(TokenNum_Dir, channel_name+ '.tsv')
+                # writeGrainList2File(channel_name_path, GrainUnique[0])
+                # print('\t\tWrite to:', channel_name_path)
         ########################################################
 
 
@@ -381,17 +377,14 @@ class BasicObject(object):
     def Calculate_Infos(cls, batch_words):
 
         Pyramid_Dir = os.path.join(cls.TokenNum_Dir, 'Pyramid')
-        # Pyramid_Dir = 
         pickle_path = os.path.join(Pyramid_Dir,  str(batch_words) + '_Info.p')
 
         if os.path.isfile(pickle_path):
-
             with open(pickle_path, 'rb') as handle:
                 batch_end_st_idx_list, job_no = pickle.load(handle)
 
             print('Read info from:', pickle_path)
             return batch_end_st_idx_list, job_no
-
 
         else:
             sentences_endidx = cls.SENT['EndIDXTokens']
@@ -400,7 +393,6 @@ class BasicObject(object):
             total_words = len(tokens_vocidx)           
             total_examples  = len(sentences_endidx)
 
-
             batch_end_st_idx_list = []
             job_no = 0 # job_num
             while True:
@@ -408,7 +400,6 @@ class BasicObject(object):
                 batch_token_progress = job_no * batch_words  # 
 
                 if batch_token_progress >= total_words:
-                    
                     # if touch the bottom, go to the end and terminate the loop
                     batch_end_st_idx_list.append(total_examples)
                     # # This won't work: print('Current batch token number:', sentences_endidx[total_examples]) 
@@ -421,8 +412,6 @@ class BasicObject(object):
                 
                 # print('Current batch token number:', sentences_endidx[batch_end_st_idx])
                 # print("Last sentence's end tk loc:", sentences_endidx[batch_end_st_idx-1])
-
-                
             # print(batch_end_st_idx_list, '\n')
 
             for idx in range(job_no):
@@ -446,13 +435,9 @@ class BasicObject(object):
                 
             # print(end == len(sentences_endidx))
             # print(token_end == len(tokens_vocidx))
-            
-
             with open(pickle_path, 'wb') as handle:
                 pickle.dump([batch_end_st_idx_list, job_no], handle, protocol=4)
-
                 print('Write info to:', pickle_path)
-
             return batch_end_st_idx_list, job_no
 
     
@@ -486,7 +471,7 @@ class BasicObject(object):
         channel_names = ['token'] # only put token in the LGUT
         # Don't need to read all of them.
         for channel_name in channel_names:
-            pickle_path = os.path.join(GrainUnique_Dir, channel_name + '.p')
+            pickle_path = os.path.join(GrainUnique_Dir, channel_name + '.voc')
             with open(pickle_path, 'rb') as handle:
                 v = pickle.load(handle)
                 cls.GRAIN_UNI[cls.TokenNum_Dir][channel_name] = v
@@ -498,7 +483,7 @@ class BasicObject(object):
         cls.TokenUnique = cls.GRAIN_UNI[cls.TokenNum_Dir]['token'] # (LTU & DTU) 
 
 
-        pickle_path = os.path.join(GrainUnique_Dir, 'DTU_freq.p')
+        pickle_path = os.path.join(GrainUnique_Dir, 'token.freq')
         with open(pickle_path, 'rb') as handle:
             v = pickle.load(handle)
             cls.DTU_freq = v
@@ -523,9 +508,9 @@ class BasicObject(object):
             os.makedirs(Pyramid_Dir)
         d = {'CORPUS': cls.CORPUS, 
              'FOLDER': cls.FOLDER, 
-             'TEXT': cls.TEXT, 
-             'SENT': cls.SENT, 
-             'TOKEN': cls.TOKEN}
+             'TEXT':   cls.TEXT, 
+             'SENT':   cls.SENT, 
+             'TOKEN':  cls.TOKEN}
         for k, v in d.items():
             pickle_path = os.path.join(Pyramid_Dir, k + '.p')
             with open(pickle_path, 'wb') as handle:
@@ -541,14 +526,17 @@ class BasicObject(object):
         if not os.path.exists(GU_Dir):
             os.makedirs(GU_Dir)
         for k, v in cls.GRAIN_UNI[TokenNum_Dir].items():
-            pickle_path = os.path.join(GU_Dir, k + '.p')
+            pickle_path = os.path.join(GU_Dir, k + '.voc')
             with open(pickle_path, 'wb') as handle:
                 # v is (LGU, DGU)
                 pickle.dump(v, handle, protocol=4)
                 print(k + '\tis Dumped into file:', pickle_path)
                 print(k + '\tthe length of it is   :', len(v[0]))
+            channel_name_path = os.path.join(GU_Dir, k + '.tsv')
+            writeGrainList2File(channel_name_path, v[0])
+            print('\t\tWrite to:', channel_name_path)
 
-        pickle_path = os.path.join(GU_Dir, 'DTU_freq.p')
+        pickle_path = os.path.join(GU_Dir, 'token.freq')
         with open(pickle_path, 'wb') as handle:
             # v is (LGU, DGU)
             pickle.dump(cls.DTU_freq, handle, protocol=4)
@@ -599,7 +587,7 @@ class BasicObject(object):
                 ############################################# ReadFrom LGUDict
             except:
                 cls.GRAIN_UNI[TokenNum_Dir] = cls.GRAIN_UNI[TokenNum_Dir] if TokenNum_Dir in cls.GRAIN_UNI else {}
-                channel_name_pickle = os.path.join(TokenNum_Dir, 'GrainUnique', channel_name + '.p')
+                channel_name_pickle = os.path.join(TokenNum_Dir, 'GrainUnique', channel_name + '.voc')
                 try:
                     ############################################# ReadFrom TSV or Pickle
                     GrainUnique = readPickleFile2GrainUnique(channel_name_pickle)
@@ -621,7 +609,7 @@ class BasicObject(object):
             
             except:
                 # if channel_name in cls.GRAIN_UNI[TokenNum_Dir]:
-                channel_name_pickle = os.path.join(TokenNum_Dir, 'GrainUnique', channel_name + '.p')
+                channel_name_pickle = os.path.join(TokenNum_Dir, 'GrainUnique', channel_name + '.voc')
                 channel_name_path = os.path.join(cls.TokenNum_Dir, channel_name + '.tsv')
                 if os.path.isfile(channel_name_pickle):
                     ############################################# ReadFrom TSV or Pickle
@@ -660,7 +648,7 @@ class BasicObject(object):
                         LOOKUP_Dir = os.path.join(TokenNum_Dir, 'LookUp')
                         if not os.path.exists(LOOKUP_Dir):
                             os.makedirs(LOOKUP_Dir)
-                        pickle_path = os.path.join(LOOKUP_Dir,  channel_name + '.p')
+                        pickle_path = os.path.join(LOOKUP_Dir,  channel_name + '.lkp')
                         with open(pickle_path, 'wb') as handle:
                             pickle.dump(LookUp, handle)
                         
@@ -693,7 +681,7 @@ class BasicObject(object):
                         # cls.Build_BIOES_Trans(channel, tagScheme, BIOES_GU, GrainUnique)
                         # cls,Build_BIOES_Trans(channel, tagScheme, BIOES_GU, new_GU)
 
-                        # pickle_path = os.path.join(LGU_Dir, channel_name + '.p')
+                        # pickle_path = os.path.join(LGU_Dir, channel_name + '.voc')
                         with open(channel_name_pickle, 'wb') as handle:
                             pickle.dump(GrainUnique, handle)
                         print('\t\tWrite to:', channel_name_pickle)
@@ -730,7 +718,7 @@ class BasicObject(object):
             except:
                 LOOKUP_Dir = os.path.join(TokenNum_Dir, 'LookUp')
                 cls.LOOKUP[TokenNum_Dir] = cls.LOOKUP[TokenNum_Dir] if TokenNum_Dir in cls.LOOKUP else {}
-                lookup_channel_name_path = os.path.join(LOOKUP_Dir, channel_name + '.p')
+                lookup_channel_name_path = os.path.join(LOOKUP_Dir, channel_name + '.lkp')
                 assert os.path.isfile(lookup_channel_name_path)
 
                 try:
@@ -759,7 +747,7 @@ class BasicObject(object):
                 cls.LOOKUP[TokenNum_Dir] = cls.LOOKUP[TokenNum_Dir] if TokenNum_Dir in cls.LOOKUP else {}
                 LOOKUP_Dir = os.path.join(TokenNum_Dir, 'LookUp')
                 ############################################# ReadFrom TSV or Pickle
-                lookup_channel_name_path = os.path.join(LOOKUP_Dir,  channel_name + '.p')
+                lookup_channel_name_path = os.path.join(LOOKUP_Dir,  channel_name + '.lkp')
                 # assert os.path.isfile(lookup_channel_name_path)
                 with open(lookup_channel_name_path, 'rb') as handle:
                     channelLookUp = pickle.load(handle)
@@ -783,9 +771,9 @@ class BasicObject(object):
                 new_DGU   = new_GU[1]
                 cls.BIOES_Trans[TokenNum_Dir] = {} if TokenNum_Dir not in cls.BIOES_Trans else cls.BIOES_Trans[TokenNum_Dir]
                 cls.BIOES_Trans[TokenNum_Dir][channel+tagScheme] = {idx: new_DGU[trans_bioesTag(channel, bioesTag, tagScheme )] 
-                                                           for idx, bioesTag in enumerate(BIOES_LGU)}
+                                                                    for idx, bioesTag in enumerate(BIOES_LGU)}
                 return cls.BIOES_Trans[TokenNum_Dir][channel+tagScheme] 
-
+        
         else:
             try:
                 return cls.BIOES_Trans[cls.TokenNum_Dir][channel+tagScheme] 
@@ -904,7 +892,6 @@ def convert_Char_2_Word_BasicObject(BasicObject, use_channel = 'pos', MaxTokenUn
     channel_name_path = os.path.join(TokenNum_Dir, 'token.tsv')
     writeGrainList2File(channel_name_path, LTU)
     print('\t\tWrite to:', channel_name_path)
-
 
     ########################################################
     if 'ANNOTokenIndex' in BasicObject.TOKEN:
