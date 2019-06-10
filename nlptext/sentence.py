@@ -59,7 +59,6 @@ class Sentence(BasicObject):
             return channelGrain
 
     def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', useStartEnd = False, end_grain = False, TokenNum_Dir = None, channel_name = None, dontUseLookUp = False):
-        
         # BUG to Fix: Error with useStartEnd = True
         if channel == 'token':
             if TokenNum_Dir:
@@ -100,8 +99,6 @@ class Sentence(BasicObject):
             except:
                 print('\tIn Pyramid, there is no CTX_DEP channel:', channel, 'Turn to the orignal way... (st.getGrainTensor)') 
         ########################################################################## Speical Case for IND and DEP
-
-
         # option 2: 
         ### case 1: deal with the case: CTX_IND channel and this channel doesn't have LOOKUP.p
         ### case 2: deal with the case: CTX_DEP channel and ANNO_CHANNEL
@@ -113,6 +110,7 @@ class Sentence(BasicObject):
         
         info, leng_st, leng_tk, max_gr = self.padding_info(info, useStartEnd = useStartEnd)
         return info, leng_st, leng_tk, max_gr
+        
 
     def padding_info(self, info, leng_tk = None, useStartEnd = True):
         if not leng_tk:
