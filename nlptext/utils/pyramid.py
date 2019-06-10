@@ -1,17 +1,13 @@
 import os
 import re
-import collections
 import numpy as np 
 import pickle
 from datetime import datetime
 
-from .channel import getChannelName
-from .grain import getChannelGrain4Token
-from .infrastructure import UNK, UNK_ID, specialTokens, specialTokensDict, strQ2B, fileReader
+from .infrastructure import strQ2B, fileReader
 
 ##################################################################################################CORPUS-FOLDER
 # Important One 
-
 def CorpusFoldersReader(CORPUSPath, iden = None):
     # file is the priority
     if iden:
@@ -39,18 +35,9 @@ def geneTextFilePaths(corpusPath, orig_iden = '.txt', anno_iden = None):
             
         FolderDict[foldername] = OrigFileList, AnnoFileList
     return FolderDict
-
-
 ##################################################################################################CORPUS-FOLDER
 
-
-
-
 ##################################################################################################FOLDER-TEXT
-# anno:
-#      False  : no annotation
-#     'Entity': annotation file suffix.
-#     'embed' : embed in the text itself.
 def textFileReader(folderPath, fileNames, anno = False, sep = '\t', notZeroIndex = 1,notRightOpen=0, **kwargs):
     # folderPath is textFile path, one text only
     # only here need to take care of annoLevel: text or sent.
@@ -204,8 +191,6 @@ FolderTextsReaders = {
 ##################################################################################################FOLDER-TEXT
 
 
-import re
-
 ##################################################################################################TEXT-SENT
 def reCutText2Sent(text, useSep = False):
     
@@ -248,9 +233,6 @@ def reCutText2Sent(text, useSep = False):
     # text = [sent.replace(' ', '').replace('\\n', '') for sent in text]
     return [sent for sent in text if len(sent)>=2]
 
-
-
-
 def lineCutText2Sent(fullfilepath):
     with open(fullfilepath, 'r', encoding = 'utf-8') as f:
         for sent in f:
@@ -283,6 +265,14 @@ def segText2Sents(text, method = 'whole', **kwargs):
         return method(text, **kwargs)
 ##################################################################################################TEXT-SENT
 
+##################################################################################################SENT-TOKEN
+def segSent2Tokens(sent, method = 'iter'):
+    if method == 'iter':
+        return [i for i in sent]
+    elif method[:4] == 'sep-':
+        sep = method.replace('sep-', '')
+        return [i for i in sent.split(sep) if i != '']
+##################################################################################################SENT-TOKEN
 
 
 ##################################################################################################TEXT-ANNO
@@ -329,8 +319,6 @@ def getCITSents(strSents, CITText):
     # CITSents
     # Here we get CITSents  
     return CITSents
-
-
        
 def getSSET_from_CIT(orig_seq, tag_seq, tag_seq_tagScheme = 'BIO', join_char = ''):
     # orig_seq is sentence without start or end
@@ -364,8 +352,7 @@ def getSSET_from_CIT(orig_seq, tag_seq, tag_seq_tagScheme = 'BIO', join_char = '
         start, end = entityAtom[0][1], entityAtom[-1][1] + 1
         tag = entityAtom[0][2].split('-')[0]
         entitiesList.append((string, start, end, tag))
-        
-        
+
     # if join_char == '*':
     #     a = [set([t.split('-')[0] for t in i[0].split('*')]) for i in entitiesList]
     #     for i in a:
@@ -374,138 +361,3 @@ def getSSET_from_CIT(orig_seq, tag_seq, tag_seq_tagScheme = 'BIO', join_char = '
                 
     return entitiesList
 ##################################################################################################TEXT-ANNO
-
-
-
-##################################################################################################SENT-TOKEN
-def segSent2Tokens(sent, method = 'iter'):
-    if method == 'iter':
-        return [i for i in sent]
-    elif method[:4] == 'sep-':
-        sep = method.replace('sep-', '')
-        return [i for i in sent.split(sep) if i != '']
-##################################################################################################SENT-TOKEN
-
-
-##################################################################################################TOKEN_LTU
-
-def buildTokens(tokenList, MaxTokenUnique = None):
-    """
-        Process raw inputs into a dataset.
-        words: a list of the whole corpus
-    """
-    #########################################################################COUNT
-    total_len_token = len(tokenList)
-    print('The Total Number of Tokens:', total_len_token)
-    print('Counting the number unique Tokens...          \t', datetime.now())
-    if MaxTokenUnique:
-        count = collections.Counter(tokenList).most_common(MaxTokenUnique)
-    else:
-        count = collections.Counter(tokenList).most_common()
-    print('\t\tDone!')
-    #########################################################################COUNT
-
-    print('Generating Dictionary of Token Unique...\t', datetime.now())
-    DTU = specialTokensDict.copy()
-    DTU_freq = {sp_tk: 0 for sp_tk in specialTokens}
-    for token, freq in count:
-        if token is not specialTokens:
-            DTU[token] = len(DTU)
-            DTU_freq[token] = freq
-        else:
-            DTU_freq[token] = DTU_freq[token] + 1
-
-
-    print('\t\tThe length of DTU is:', len(DTU), '\t', datetime.now())
-    print('Generating the ORIGTokenIndex...       \t', datetime.now())
-    data = np.zeros(len(tokenList), dtype = np.uint32)
-    # data = []
-    for idx, token in enumerate(tokenList):
-        voc_id = DTU.get(token, UNK_ID)
-        data[idx] = voc_id
-        if voc_id == UNK_ID:
-            DTU_freq[UNK] = DTU_freq[UNK] + 1
-
-        # data.append(DTU.get(token,UNK_ID))
-        if idx % 5000000 == 0:
-            print('\t\tThe idx of token is:', idx, '\t', datetime.now())
-    print('\t\tDone!')
-    LTU = list(DTU.keys())
-
-    if MaxTokenUnique:
-        print('Only Keep First', MaxTokenUnique, 'Tokens.')
-        print('The coverage rate is:', np.bincount(data)[UNK_ID]/total_len_token)
-    # data = np.array(data)
-    return data, LTU, DTU, DTU_freq
-##################################################################################################TOKEN_LTU
-
-
-
-##################################################################################################CHANNEL_SETTINGS
-def get_Channel_Settings(CHANNEL_SETTINGS_TEMPLATE):
-    d = CHANNEL_SETTINGS_TEMPLATE.copy()
-    try:
-        CHANNEL_SETTINGS = {channel: d[channel] for channel in d 
-                            if d[channel].pop('use') == True}
-    except:
-        CHANNEL_SETTINGS = {k:v for k, v in d.items()}
-
-    nameList = []
-
-    for channel in CHANNEL_SETTINGS:
-        # CHANNEL_SETTINGS[]
-        channel_setting = CHANNEL_SETTINGS[channel]
-        #channel_setting.pop('use')
-        Max_Ngram    = channel_setting.get('Max_Ngram', 1)
-        end_grain    = channel_setting.get('end_grain', False)
-        tagSet       = channel_setting.get('tagSet',    None)
-        tagScheme    = channel_setting.get('tagScheme', 'BIO')
-
-        channel_name_abbr = getChannelName(channel, Max_Ngram, end_grain, tagScheme, style = 'abbr')
-        nameList.append(channel_name_abbr)
-    
-    folderName = '_'.join(nameList)
-    
-    return CHANNEL_SETTINGS, folderName
-##################################################################################################CHANNEL_SETTINGS
-
-
-
-##################################################################################################LTU_LGU-LT
-
-def get_LGU_or_LT(TokenUnique, channel= 'char',
-                  Max_Ngram = 1, end_grain = False,
-                  specialTokens = specialTokens):
-
-    # ListGrainUnique = []
-    
-    LTU, DTU = TokenUnique
-    num_specialtokens = len(specialTokens)
-    assert LTU[:num_specialtokens] == specialTokens
-    
-    
-    DictGrainUnique = {}
-    new_grains = [stk for stk in specialTokens]
-    # ListGrainUnique = ListGrainUnique + new_grains
-    for stk in new_grains:
-        DictGrainUnique[stk] = len(DictGrainUnique)
-
-    LookUp = [[idx] for idx in range(num_specialtokens)]
-    
-    print('For channel: |', channel, '| build GrainUnique and LookUp')
-    for idx, token in enumerate(LTU[num_specialtokens:]):
-        ChN = getChannelGrain4Token(token, channel, Max_Ngram= Max_Ngram, end_grain = end_grain)
-        new_grains = [i for i in set(ChN) if i not in DictGrainUnique]
-        new_grains.sort() # make sure to keep the order
-
-        for stk in new_grains:
-            DictGrainUnique[stk] = len(DictGrainUnique)
-        LookUp.append([DictGrainUnique.get(gr) for gr in ChN])
-        if (idx + num_specialtokens) % 100000 == 0:
-            print('\t\tFor Channel:', channel, '\t', idx + num_specialtokens, datetime.now())
-            
-    ListGrainUnique = list(DictGrainUnique.keys())
-    assert ListGrainUnique[:num_specialtokens] == specialTokens
-    assert len(LookUp) == len(LTU)
-    return (ListGrainUnique, DictGrainUnique), LookUp
-##################################################################################################LTU_LGU-LT

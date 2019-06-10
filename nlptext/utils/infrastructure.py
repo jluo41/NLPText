@@ -1,6 +1,6 @@
 import pickle
 
-
+############### PART SpecialTokens
 
 PAD   = '</pad>'
 START = '</start>'
@@ -8,11 +8,12 @@ END   = '</end>'
 UNK   = '</unk>'
 specialTokens     = [ PAD, START, END, UNK]
 specialTokensDict = {PAD: 0, START: 1, END: 2, UNK : 3, }
-
 START_ID = specialTokensDict[START]
 END_ID   = specialTokensDict[END]
 UNK_ID   = specialTokensDict[UNK]
 
+
+############### PART CODE
 
 def strQ2B(ustring):
     rstring = ''
@@ -25,11 +26,13 @@ def strQ2B(ustring):
         rstring += chr(inside_code)
     return rstring
 
+
+############### PART Input and Output 
+
 def fileReader(path):
     with open(path, 'r', encoding = 'utf-8') as f:
         text = f.read()
     return strQ2B(text)
-
 
 def writeGrainList2File(channel_name_path, ListGrainUnique):
     with open(channel_name_path, 'w', encoding = 'utf-8') as f:
@@ -50,6 +53,51 @@ def readPickleFile2GrainUnique(channel_name_path):
         v = pickle.load(handle)
     return v  #(LGU, DGU)
 
+############### PART BIOES Labels and Transformation.
+# input: ['不确定', '修饰',  '检查', '疾病', '症状']
+# ouput: ['</pad>', '</start>', '</end>', 'O', '不确定-B', '不确定-I', '修饰-B', '修饰-I', '检查-B', '检查-I', '疾病-B', '疾病-I', '症状-B', '症状-I']
+def getTagDict(TagList, tagScheme = 'BIO'):
+    L = []
+    suffices = ['-B', '-I']
+    if 'O' in tagScheme:
+        pref = specialTokens[:-1] + ['O']
+    
+    else:
+        pref = specialTokens[:-1] # without UNK
+    if 'E' in tagScheme:
+        suffices = suffices + ['-E']
+    if 'S' in tagScheme:
+        suffices = suffices + ['-S']
+
+    TagList = [i for i in TagList if i !='O']
+    for tag in TagList:
+
+        L.extend([tag+suff for suff in suffices])
+    L.sort()
+    L = pref + L
+    
+    return L
+
+def trans_bioesTag(channel, bioesTag, tagScheme):
+
+    if bioesTag in specialTokens:
+        return bioesTag
+
+    if 'S' not in tagScheme and 'E' not in tagScheme:
+        i = bioesTag.replace('-S', '-B').replace('-E', '-I')
+    elif 'S' not in tagScheme:
+        i = bioesTag.replace('-S', '-B')
+    elif 'E' not in tagScheme:
+        i = bioesTag.replace('-E', '-I')
+    else:
+        i = bioesTag
+
+    if channel == 'annoR':
+        return i.split('-')[-1] 
+    else:
+        return i
+
+############### PART Char To Word
 
 def modify_wordBoundary_with_hyperBoundary(pos_sent, anno_sent):
     # return the new word_boundary with BIO tagScheme.
@@ -68,8 +116,6 @@ def modify_wordBoundary_with_hyperBoundary(pos_sent, anno_sent):
                 pos_sent[idx+1] = pos_sent[idx+1].split('-')[0] + '-B'
                 
     return pos_sent
-
-
 
 def trans_charLabels_to_wordLabels(string, join_char = '*'):
     labels = string.split('*')
@@ -103,70 +149,37 @@ def trans_charLabels_to_wordLabels(string, join_char = '*'):
                 # print('Jie -->', tag, loc_indicator)
                 return tag, loc_indicator
 
+############### PART OTHERS
 
 
-########### NER ###########
+# def extractEmbedPath2Info(embed_path, channel = None):
+#     if not os.path.isfile(embed_path):
+#         return None
+#     path_comp = embed_path.split('/')
+#     TokenNum_Dir = '/'.join(['channel'] + path_comp[1:4])
+#     # print(path_comp[-1].split('.')[0].split('_')[-1].lower())
+#     if channel:
+#         assert channel == path_comp[-1].split('.')[0].split('_')[-1].lower()
+#     else:
+#         channel = path_comp[-1].split('.')[0].split('_')[-1].lower()
 
-CORPUSPath = 'corpus/ner/'
-corpusFileIden = None
-textType   = 'file'
-Text2SentMethod  = 're'
-Sent2TokenMethod = 'iter'
-TOKENLevel = 'char'
-anno = '.Entity'
-annoKW = {
-    'sep': '\t',
-    'notZeroIndex': 1,
-}
+#     channel_abbr = CHANNEL_ABBR[channel]
+#     channel_name_abbr = [i for i in path_comp[4].split('_') if channel_abbr in i][0]
 
+#     MN_E = channel_name_abbr[len(channel_abbr): ]
 
-########### MedPOS ###########
+#     if MN_E == '':
+#          channel_name = channel
+#     elif channel in CONTEXT_IND_CHANNELS:
+#         channel_name = channel + MN_E
+#     else:
+#         if int(MN_E) == 5:
+#             channel_name = channel + '-bioes'
+#         elif int(MN_E) == 4:
+#             channel_name = channel + '-bioe'
+#         else:
+#             print('Fail to Extract information for embed:', embed_path, channel, MN_E)
 
-CORPUSPath = 'corpus/medpos/'
-textType   = 'file'
-corpusFileIden = None
-Text2SentMethod  = 're'
-Sent2TokenMethod = 'iter'
-TOKENLevel = 'char'
-anno = '.UMLSTag'
-annoKW = {
-    'sep': '\t',
-    'notZeroIndex': 0,
-}
+#     return TokenNum_Dir, channel_name
 
-########### Weibo Test ###########
-CORPUSPath = 'corpus/weibotest/'
-corpusFileIden = None
-textType   = 'file'
-Text2SentMethod  = 're'
-Sent2TokenMethod = 'sep-\t'
-TOKENLevel = 'word'
-anno = False
-annoKW = {}
-
-
-########### Wiki ###########
-CORPUSPath = 'corpus/wiki/'
-corpusFileIden = '.txt'
-
-textType   = 'line'
-
-Text2SentMethod  = 're'
-Sent2TokenMethod = 'sep- '
-TOKENLevel = 'word'
-
-anno = False
-annoKW = {}
-
-
-
-########### ResumeNER ###########
-CORPUSPath = 'corpus/ResumeNER/'
-corpusFileIden = '.bmes'
-textType   = 'block'
-Text2SentMethod  = 're'
-Sent2TokenMethod = 'iter'
-TOKENLevel = 'char'
-anno = 'embed' # TODO
-annoKW = {}
 

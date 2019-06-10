@@ -237,9 +237,73 @@ Channel_Dep_TagSets = {'pos': posTag}
 ################################################################################################
 
 
+def getGrainNgrams(subword_infos, n):
+    # Here N is the Num for n_gram
+    #     subword_infos: [subcomp1, subcomp2, ...] or [stroke1, stroke2, ...]
+    #                 n: the targeted n gram
+    if n == 1:
+        return [i for i in subword_infos]
+    if n > len(subword_infos):
+        # How to deal this when the length is not so long
+        # Condition: where n is larger than the infos
+        return [] 
+    l = [subword_infos[i:n+i] for i in range(len(subword_infos) - n + 1)]
+    l = ['-'.join(i) for i in l]
+    return l
 
-def getChannelName(channel, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO', style = 'normal',
-                   channel_name = None, channel_name_abbr = None, **kwargs):
+def grainToken(token, grainCharFunction, Ngram = 1,Max_Ngram = None, end_grain = True):
+    '''
+        token level only!
+        The input token is not in Special Tokens. The input token is a string!
+        TODO: handle the `ngram` problems here. Content-Idenpendent Only
+    '''
+    if token not in specialTokens:
+        infos = sum([grainCharFunction(char, end_grain) for char in token], [])
+        if not Max_Ngram:
+            return getGrainNgrams(infos, Ngram)
+        else:
+            return sum([getGrainNgrams(infos, idx+1) for idx in range(Max_Ngram)], [])
+    else:
+        return getGrainNgrams([token], Ngram) # deal with the special tokens
+
+def getChannelGrain4Token(token, channel, Ngram = 1, Max_Ngram = None,  end_grain = False):
+    '''
+        token level only!
+        The input token is not in Special Tokens
+        The input token is a string!
+        TODO: handle the `ngram` problems here.
+        Content-Idenpendent Only
+    '''
+    if channel == 'token':
+        return [token]
+    elif channel in Channel_Ind_Methods:
+        return grainToken(token, Channel_Ind_Methods[channel], Ngram = Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain)
+    else:
+        print('The Channel "', channel, '" is not available currently!')
+
+###############################################################################################################
+def grainSent_ctxInd(sent, channel, Ngram = 1, Max_Ngram = None,  end_grain = False):
+    return [getChannelGrain4Token(token, channel, Ngram, Max_Ngram, end_grain) for token in sent]
+    
+def grainSent_ctxDep(sent, channelGrainSent, tokenLevel = 'word', tagScheme = 'BIO', useStartEnd = True):
+    return channelGrainSent(sent, tokenLevel=tokenLevel, tagScheme=tagScheme, useStartEnd = useStartEnd)
+
+def getChannelGrain4Sent(sent, channel, Ngram = 1, Max_Ngram = None, tokenLevel = 'char', tagScheme =  'BIO', useStartEnd = True, end_grain = False):
+    '''
+        token level only! The input token is not in Special Tokens. The input token is a string!
+        TODO: handle the `ngram` problems here. Content-Idenpendent Only
+    '''
+    if channel in Channel_Ind_Methods:
+        return grainSent_ctxInd(sent, channel, Ngram = Ngram, Max_Ngram = Max_Ngram,  end_grain = end_grain)
+    elif channel in Channel_Dep_Methods:
+        return grainSent_ctxDep(sent, Channel_Dep_Methods[channel], tokenLevel =tokenLevel, tagScheme = tagScheme, useStartEnd = useStartEnd)
+    else:
+        print('The Channel "', channel, '" is not available currently!')
+###############################################################################################################
+
+
+############### PART Channel Name
+def getChannelName(channel, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO', style = 'normal', channel_name = None, channel_name_abbr = None, **kwargs):
 
     if style == 'normal':
         MN = str(Max_Ngram) if Max_Ngram > 1 else ''
@@ -309,79 +373,30 @@ def getChannelName(channel, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO'
 
     else:
         print('Error in getChannelName')
+
+def get_Channel_Settings(CHANNEL_SETTINGS_TEMPLATE):
+    d = CHANNEL_SETTINGS_TEMPLATE.copy()
+    try:
+        CHANNEL_SETTINGS = {channel: d[channel] for channel in d 
+                            if d[channel].pop('use') == True}
+    except:
+        CHANNEL_SETTINGS = {k:v for k, v in d.items()}
+
+    nameList = []
+
+    for channel in CHANNEL_SETTINGS:
+        # CHANNEL_SETTINGS[]
+        channel_setting = CHANNEL_SETTINGS[channel]
+        #channel_setting.pop('use')
+        Max_Ngram    = channel_setting.get('Max_Ngram', 1)
+        end_grain    = channel_setting.get('end_grain', False)
+        tagSet       = channel_setting.get('tagSet',    None)
+        tagScheme    = channel_setting.get('tagScheme', 'BIO')
+
+        channel_name_abbr = getChannelName(channel, Max_Ngram, end_grain, tagScheme, style = 'abbr')
+        nameList.append(channel_name_abbr)
     
-
-def getTagDict(TagList, tagScheme = 'BIO'):
-    L = []
-    suffices = ['-B', '-I']
-    if 'O' in tagScheme:
-        pref = specialTokens[:-1] + ['O']
+    folderName = '_'.join(nameList)
     
-    else:
-        pref = specialTokens[:-1] # without UNK
-    if 'E' in tagScheme:
-        suffices = suffices + ['-E']
-    if 'S' in tagScheme:
-        suffices = suffices + ['-S']
-
-    TagList = [i for i in TagList if i !='O']
-    for tag in TagList:
-
-        L.extend([tag+suff for suff in suffices])
-    L.sort()
-    L = pref + L
+    return CHANNEL_SETTINGS, folderName
     
-    return L
-
-
-def trans_bioesTag(channel, bioesTag, tagScheme):
-
-    if bioesTag in specialTokens:
-        return bioesTag
-
-    if 'S' not in tagScheme and 'E' not in tagScheme:
-        i = bioesTag.replace('-S', '-B').replace('-E', '-I')
-    elif 'S' not in tagScheme:
-        i = bioesTag.replace('-S', '-B')
-    elif 'E' not in tagScheme:
-        i = bioesTag.replace('-E', '-I')
-    else:
-        i = bioesTag
-
-    if channel == 'annoR':
-        return i.split('-')[-1] 
-    else:
-        return i
-
-
-
-def extractEmbedPath2Info(embed_path, channel = None):
-    
-    if not os.path.isfile(embed_path):
-        return None
-    path_comp = embed_path.split('/')
-    TokenNum_Dir = '/'.join(['channel'] + path_comp[1:4])
-    # print(path_comp[-1].split('.')[0].split('_')[-1].lower())
-    if channel:
-        assert channel == path_comp[-1].split('.')[0].split('_')[-1].lower()
-    else:
-        channel = path_comp[-1].split('.')[0].split('_')[-1].lower()
-
-    channel_abbr = CHANNEL_ABBR[channel]
-    channel_name_abbr = [i for i in path_comp[4].split('_') if channel_abbr in i][0]
-
-    MN_E = channel_name_abbr[len(channel_abbr): ]
-
-    if MN_E == '':
-         channel_name = channel
-    elif channel in CONTEXT_IND_CHANNELS:
-        channel_name = channel + MN_E
-    else:
-        if int(MN_E) == 5:
-            channel_name = channel + '-bioes'
-        elif int(MN_E) == 4:
-            channel_name = channel + '-bioe'
-        else:
-            print('Fail to Extract information for embed:', embed_path, channel, MN_E)
-
-    return TokenNum_Dir, channel_name
