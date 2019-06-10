@@ -24,7 +24,6 @@ BasicObject.INIT(CORPUSPath, corpusFileIden, textType,
 # LGU = 'data/WikiTotal/word/Token1000004/GrainUnique'
 # BasicObject.INIT_FROM_PICKLE(BOB, LGU)
 
-
 # print('BasicObject is Ready!')
 ##################################
 
@@ -44,7 +43,6 @@ CHANNEL_SETTINGS_TEMPLATE = {
     'annoR':   {'use': False,'Max_Ngram': 1, 'end_grain': False, 'tagScheme':   'BIO',},
     'annoE':   {'use': False,'Max_Ngram': 1, 'end_grain': False, 'tagScheme':   'BIO',},
 }
-
 
 
 CHANNEL_SETTINGS_TEMPLATE = {
