@@ -5,8 +5,7 @@ import numpy as np
 from .base import BasicObject
 from .token import Token
 
-from .utils.grain import getChannelGrain4Sent 
-from .utils.channel import getChannelName
+from .utils.channel import getChannelGrain4Sent, getChannelName
 from .utils.pyramid import segSent2Tokens
 from .utils.infrastructure import START, END, START_ID, END_ID, UNK_ID
 
@@ -37,7 +36,6 @@ class Sentence(BasicObject):
         else:
             return ''.join([tk.token for tk in self.Tokens])
 
-
     def getChannelGrain(self, channel,  Max_Ngram = 1, tagScheme = 'BIO',  useStartEnd = False, end_grain = False):
         channelToken = 'ANNOTokenIndex' if 'anno' in  channel else channel + 'TokenIndex'
         
@@ -45,7 +43,6 @@ class Sentence(BasicObject):
             channelGrain = [[tk.token] for tk in self.Tokens]
         
         elif channelToken in self.TOKEN and not self._sentence:
-            #print('Use Pyramid')
             LGU, DGU = self.getGrainUnique(channel, Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
             channel_grain_index = self.build_ctx_dep_grain(channel, tagScheme)
             channelGrain = [[LGU[i]] for i in channel_grain_index]
@@ -61,7 +58,6 @@ class Sentence(BasicObject):
         else:
             return channelGrain
 
-        
     def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', useStartEnd = False, end_grain = False, TokenNum_Dir = None, channel_name = None, dontUseLookUp = False):
         
         # BUG to Fix: Error with useStartEnd = True
@@ -118,7 +114,6 @@ class Sentence(BasicObject):
         info, leng_st, leng_tk, max_gr = self.padding_info(info, useStartEnd = useStartEnd)
         return info, leng_st, leng_tk, max_gr
 
-
     def padding_info(self, info, leng_tk = None, useStartEnd = True):
         if not leng_tk:
             leng_tk = [len(i) for i in info]
@@ -138,7 +133,6 @@ class Sentence(BasicObject):
         
         return info, leng_st, leng_tk, max_gr
         
-
     def build_ctx_dep_grain(self, channel, tagScheme, TokenNum_Dir = None, to_tmp = False):
         channelToken = 'ANNOTokenIndex' if 'anno' in  channel else channel + 'TokenIndex'
         s, e = self.IdxTokenStartEnd

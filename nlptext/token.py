@@ -3,9 +3,7 @@ from bisect import bisect
 import numpy as np 
 
 from .base import BasicObject
-
-from .utils.grain import getChannelGrain4Token
-from .utils.channel import getChannelName
+from .utils.channel import getChannelGrain4Token, getChannelName
 from .utils.infrastructure import UNK_ID
 
 class Token(BasicObject):
