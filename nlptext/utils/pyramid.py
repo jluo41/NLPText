@@ -277,9 +277,11 @@ def segSent2Tokens(sent, method = 'iter'):
 
 ##################################################################################################TEXT-ANNO
 def getCITText(strText, SSETText):
-    # len(SSETText) > 0
-    # for sset in SSETText:
-    #    assert strText[sset[1]: sset[2]] == sset[0]
+    # check strText and SSETText
+    len(SSETText) > 0
+    for sset in SSETText:
+       assert strText[sset[1]: sset[2]] == sset[0]
+
     CITAnnoText = []
     for sset in SSETText:
         # BIOES

@@ -59,9 +59,9 @@ class Sentence(BasicObject):
             return channelGrain
 
     def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, channel_name = None, 
-                           useStartEnd = False, 
-                           TokenNum_Dir = None, # from TokenNum_Dir, we get TU, GU, and LKP
-                           TU = None, GU = None, LKP = None, dontUseLookUp = False):
+                       useStartEnd = False, 
+                       TokenNum_Dir = None, # from TokenNum_Dir, we get TU, GU, and LKP
+                       TU = None, GU = None, LKP = None, dontUseLookUp = False):
 
         if channel == 'token':
             # deal with the token first, this is a special channel and we need deal with it first.

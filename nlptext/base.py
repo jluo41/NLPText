@@ -146,17 +146,12 @@ class BasicObject(object):
 
                 if anno and TOKENLevel == 'char': # TODO
                     #########################################################Anno
-                    for sset in SSETText:
-                        try:
-                            assert sset[0] == strText[sset[1]: sset[2]]
-                        except:
-                            print(SSETText, '\n', sset, '\n',origTextName, '\n',annoTextName)
-                        
                     if SSETText == []:
                         print('\nThe SSET of this Text is Empty!!!', '\n', strText, '\n')
                             
                     ############### PART One: Get CITText ###########
-                    CITText  = getCITText(strText, SSETText)
+                    # will check strText and SSET inside getCITText
+                    CITText  = getCITText(strText, SSETText) 
                     #################################################          
                         
                     ############### PART TWO: Get CITSents ##########
