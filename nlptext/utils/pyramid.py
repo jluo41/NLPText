@@ -2,6 +2,8 @@ import os
 import re
 import numpy as np 
 import pickle
+import json
+import pandas as pd
 from datetime import datetime
 
 from .infrastructure import strQ2B, fileReader
@@ -174,12 +176,58 @@ def textBlockReader(folderPath, fileNames, anno = True, **kwargs):
                 L = []
     
 
-def textElementReader(foderPath, fileNames, anno = False, **kwargs):
-    with open(foderPath, 'rb') as handle:
+def textElementReader(folderPath, fileNames, anno = False, **kwargs):
+    with open(folderPath, 'rb') as handle:
         L = pickle.load(handle)
         for strText in L:
             strText = strQ2B(strText)
             yield strText, None, None, None
+
+def textJsonReader(folderPath, fileNames, anno = '.json', **kwargs):
+    with open(folderPath, 'rb') as file:
+        for line in file.readlines():
+            dic = json.loads(line)
+            strText = dic['content']
+            SSETText = []
+            tokens = dic['annotation']
+            for i in tokens:
+                token = [i['points'][0]['text'], i['points'][0]['start'], i['points'][0]['end']+1, ''.join(i['label'])]
+                SSETText.append(token)
+            yield strText, SSETText, None, None
+
+def textXlsxReader(folderPath, fileNames, anno = 'xlsx', **kwargs):
+    data = pd.read_excel(folderPath, sheet_name = 'Sheet1')
+    strText = ''
+    for i in data['Word']:
+        if i.isalnum():
+            strText = strText + ' ' + i
+        else:
+            strText += i
+    sid = data['POS'] + ' ' + data['Tag']
+    SSETText = []
+    length = 0
+    for i in range(len(data)):
+        word = data['Word'][i]
+        tag = [word, length, length + len(word), sid[i]]
+        length = length + len(word) + 1
+        SSETText.append(tag)
+    yield strText, SSETText, None, None
+
+def textIOB2Reader(folderPath, fileNames, anno = 'iob2', **kwargs):
+    with open (folderPath, 'r') as file:
+        lines = file.readlines()
+        content = []
+        SSETText = []
+        idx = 0
+        for line in lines:
+            if line == '\n':
+                line = '.'
+            else:
+                i = line.split('\t')
+                content.append(i[0])
+                SSETText.append([i[0],idx, idx+len(i[0]),i[1].split('\n')[0]])
+                idx += len(i[0])
+        strText = ' '.join(content)
 
 
 FolderTextsReaders = {
@@ -187,6 +235,8 @@ FolderTextsReaders = {
     'line': textLineReader,
     'block':textBlockReader,
     'element': textElementReader,
+    'json' : textJsonReader,
+    'xlsx': textXlsxReader
 }
 ##################################################################################################FOLDER-TEXT
 
@@ -277,11 +327,13 @@ def segSent2Tokens(sent, method = 'iter'):
 
 ##################################################################################################TEXT-ANNO
 def getCITText(strText, SSETText):
-    # check strText and SSETText
     len(SSETText) > 0
     for sset in SSETText:
-       assert strText[sset[1]: sset[2]] == sset[0]
-
+        try:
+            assert strText[sset[1]: sset[2]] == sset[0]
+        except:
+            print('strText:', strText[sset[1] : sset[2]])
+            print('SSETText:', sset[0])
     CITAnnoText = []
     for sset in SSETText:
         # BIOES
@@ -311,7 +363,7 @@ def getCITSents(strSents, CITText):
             # sentTokenIdx = txtTokenIdx - lenLastSent - collapse
             txtTokenIdx = sentTokenIdx + lenLastSent + collapse
             cT, _, tT = CITText[txtTokenIdx]
-            while c != cT:
+            while c != cT and c != ' ':
                 collapse = collapse + 1
                 txtTokenIdx = sentTokenIdx + lenLastSent + collapse
                 cT, _, tT = CITText[txtTokenIdx]
