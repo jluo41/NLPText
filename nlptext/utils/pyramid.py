@@ -195,39 +195,42 @@ def textJsonReader(folderPath, fileNames, anno = '.json', **kwargs):
                 SSETText.append(token)
             yield strText, SSETText, None, None
 
-def textXlsxReader(folderPath, fileNames, anno = 'xlsx', **kwargs):
-    data = pd.read_excel(folderPath, sheet_name = 'Sheet1')
-    strText = ''
-    for i in data['Word']:
-        if i.isalnum():
-            strText = strText + ' ' + i
-        else:
-            strText += i
-    sid = data['POS'] + ' ' + data['Tag']
-    SSETText = []
-    length = 0
-    for i in range(len(data)):
-        word = data['Word'][i]
-        tag = [word, length, length + len(word), sid[i]]
-        length = length + len(word) + 1
-        SSETText.append(tag)
+def textWordReader(folderPath, fileNames, anno = '.xlsx', **kwargs):
+    if anno == '.xlsx' or anno == '.csv':
+        if anno == '.xlsx': 
+            data = pd.read_excel(folderPath)
+        if anno == '.csv':
+            data = pd.read_csv(folderPath)
+        strText = []
+        SSETText = []
+        flag = data['Sentence #'].isnull()
+        for i in range(len(data['Word'])):
+            if flag[i] == False and i != 0:
+                strText.append(' ')
+                SSETText.append([' ', -1, 'T2S'])
+            word = data['Word'][i]
+            label = data['Tag'][i]
+            tag = [word, i, label]
+            SSETText.append(tag)
+            strText.append(word)
+    else:       
+        with open (folderPath, 'r') as file:
+            lines = file.readlines()
+            strText = []
+            SSETText = []
+            idx = 0
+            for line in lines:
+                if line == '\n':
+                    strText.append(' ')
+                    SSETText.append([' ', -1, 'T2S'])
+                else:
+                    line = line.split('\n')[0]
+                    temp = line.split('\t')
+                    strText.append(temp[0])
+                    SSETText.append([temp[0], idx, temp[-1]])
+                    idx += 1
     yield strText, SSETText, None, None
 
-def textIOB2Reader(folderPath, fileNames, anno = 'iob2', **kwargs):
-    with open (folderPath, 'r') as file:
-        lines = file.readlines()
-        content = []
-        SSETText = []
-        idx = 0
-        for line in lines:
-            if line == '\n':
-                line = '.'
-            else:
-                i = line.split('\t')
-                content.append(i[0])
-                SSETText.append([i[0],idx, idx+len(i[0]),i[1].split('\n')[0]])
-                idx += len(i[0])
-        strText = ' '.join(content)
 
 
 FolderTextsReaders = {
@@ -236,7 +239,7 @@ FolderTextsReaders = {
     'block':textBlockReader,
     'element': textElementReader,
     'json' : textJsonReader,
-    'xlsx': textXlsxReader
+    'word': textWordReader
 }
 ##################################################################################################FOLDER-TEXT
 
@@ -288,6 +291,16 @@ def lineCutText2Sent(fullfilepath):
         for sent in f:
             yield strQ2B(sent).replace('\n', '')
 
+def tokenText2Sent(text):
+    sents = []
+    idx = 0
+    for i in range(len(text)):
+        if text[i] == ' ':
+            sents.append(text[idx:i])
+            idx =  i + 1
+    sents.append(text[idx:])
+    return sents
+
 def segText2Sents(text, method = 'whole', **kwargs):
     
     '''
@@ -299,8 +312,12 @@ def segText2Sents(text, method = 'whole', **kwargs):
         2. `funct`: when method is a function, whose input is a text-level string,
                     then return text = funct(text) = [..., sent-level string, ...]
         3. 'line' : string. when text is filepath where each line is a sentence
-                    then return a generator text = generate(text), item is a sent-level string.        
+                    then return a generator text = generate(text), item is a sent-level string.
+        4. 'token': when strText is a list of tokens, cut the text into sentences. 
+                    return text = [[sentence 1], [sentence 2], ... ]         
     '''
+    if method == 'token':
+        return tokenText2Sent(text)
     if os.path.isfile(text):
         if method == 'line':
             text = lineCutText2Sent(text)
@@ -326,31 +343,44 @@ def segSent2Tokens(sent, method = 'iter'):
 
 
 ##################################################################################################TEXT-ANNO
-def getCITText(strText, SSETText):
-    len(SSETText) > 0
-    for sset in SSETText:
-        try:
-            assert strText[sset[1]: sset[2]] == sset[0]
-        except:
-            print('strText:', strText[sset[1] : sset[2]])
-            print('SSETText:', sset[0])
-    CITAnnoText = []
-    for sset in SSETText:
-        # BIOES
-        strAnno, s, e, tag = sset
-        CIT = [[c, s + idx, tag+ '-I']  for idx, c in enumerate(strAnno)]
-        CIT[-1][2] = tag + '-E'
-        CIT[ 0][2] = tag + '-B'
-        if len(CIT) == 1:
-            CIT[0][2] = tag + '-S' 
-        CITAnnoText.extend(CIT)
+def getCITText(strText, SSETText, TOKENLevel='char'):
+    len(SSETText) > 0 
+    if TOKENLevel == 'char':
+        for sset in SSETText:
+            try:
+                assert strText[sset[1]: sset[2]] == sset[0]
+            except:
+                print('strText:', strText[sset[1] : sset[2]])
+                print('SSETText:', sset[0])
+        CITAnnoText = []
+        for sset in SSETText:
+            # BIOES
+            strAnno, s, e, tag = sset
+            CIT = [[c, s + idx, tag+ '-I']  for idx, c in enumerate(strAnno)]
+            CIT[-1][2] = tag + '-E'
+            CIT[ 0][2] = tag + '-B'
+            if len(CIT) == 1:
+                CIT[0][2] = tag + '-S' 
+            CITAnnoText.extend(CIT)
 
-    # print(strAnnoText)
-    CITText = [[char, idx, 'O'] for idx, char in enumerate(strText)]
-    for citAnno in CITAnnoText:
-        c, idx, t = citAnno
-        assert CITText[idx][0] == c
-        CITText[idx] = citAnno
+        # print(strAnnoText)
+        CITText = [[char, idx, 'O'] for idx, char in enumerate(strText)]
+        for citAnno in CITAnnoText:
+            c, idx, t = citAnno
+            assert CITText[idx][0] == c
+            CITText[idx] = citAnno
+
+    elif TOKENLevel == 'word':
+        CITText = []
+        for idx, sset in enumerate(SSETText):
+            try:
+                assert sset[0] == strText[idx]
+            except:
+                print(strText)[idx]
+                print(sset[0])
+
+            CITText.append(sset)
+
     return CITText
 
 def getCITSents(strSents, CITText):

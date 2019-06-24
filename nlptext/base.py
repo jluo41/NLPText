@@ -151,7 +151,7 @@ class BasicObject(object):
                             
                     ############### PART One: Get CITText ###########
                     # will check strText and SSET inside getCITText
-                    CITText  = getCITText(strText, SSETText) 
+                    CITText  = getCITText(strText, SSETText,TOKENLevel) 
                     #################################################          
                         
                     ############### PART TWO: Get CITSents ##########
