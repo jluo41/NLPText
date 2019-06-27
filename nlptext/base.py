@@ -9,7 +9,7 @@ from .utils.infrastructure import writeGrainList2File, readPickleFile2GrainUniqu
 from .utils.infrastructure import modify_wordBoundary_with_hyperBoundary, trans_charLabels_to_wordLabels
 from .utils.infrastructure import getTagDict, trans_bioesTag
 
-from .utils.pyramid import CorpusFoldersReader, FolderTextsReaders, segText2Sents, segSent2Tokens, getCITText, getCITSents, getSSET_from_CIT
+from .utils.pyramid import CorpusGroupsReader, FolderTextsReaders, segText2Sents, segSent2Tokens, getCITText, getCITSents, getSSET_from_CIT
 
 from .utils.vocab import buildTokens, get_GU_or_LKP
 
@@ -17,32 +17,77 @@ from .utils.channel import CONTEXT_IND_CHANNELS, CONTEXT_DEP_CHANNELS, ANNO_CHAN
 from .utils.channel import Channel_Dep_Methods, Channel_Dep_TagSets, getChannelName, get_Channel_Settings
 
 
-MaxTextIdx = False # TODO
-MaxTokenUnique = 3500000
+# TODO: to remove these two items
+# MaxTextIdx = False 
+# MaxTokenUnique = 3500000
+
+# the default length for the whole corpus
+DEFAULT_SENT_LENG = 5000000
+
+# labels and tags
+# labels: ['Person', 'Location']
+# tags  : ['O', Person-B', 'Person-I', 'Location-B', 'Location-I']
+
+# token, token_idx, token_locidx
+# "New",        10,          123
+# DTU['New'] = 10
+# token(123) = "New", perhaps there is another token_locidx which is also "New".
+
+
+processed_data_path = 'processed_data.txt'
+
+
+def utf8len(s):
+    return len(s.encode('utf-8'))
+
 
 class BasicObject(object):
+    # basic path
+    Base_Dir = None
+
+    # 五大老五奉行
     CORPUS = {}
-    FOLDER = {}
+    GROUP  = {}
     TEXT   = {}
     SENT   = {}
     TOKEN  = {}
-    LOOKUP = {}
-    GRAIN_UNI = {}
-    TokenNum_Dir = None
-    TokenUnique  = None
+
+    # token and hyper fields
+    TokenVocab = None
+    VOCAB = {}
+    # sub fields
+    SUB_VOCAB = {}
+
+    # deal with transfer hyper fields tokens
+    BIOES_Trans = {}
+    CTX_DEP_TMP = {}
+
+    # other items
     specialTokens = specialTokens
     CONTEXT_IND_CHANNELS = CONTEXT_IND_CHANNELS
     CONTEXT_DEP_CHANNELS = CONTEXT_DEP_CHANNELS
     ANNO_CHANNELS        = ANNO_CHANNELS
     CHANNEL_ABBR         = CHANNEL_ABBR
-    BIOES_Trans = {}
-    CTX_DEP_TMP = {}
-    BATCH_INFO = {}
 
     @classmethod
-    def INIT(cls, CORPUSPath, corpusFileIden, textType,Text2SentMethod, Sent2TokenMethod, TOKENLevel, anno, annoKW,  MaxTextIdx = MaxTextIdx, MaxTokenUnique = MaxTokenUnique):
+    def INIT(cls, CORPUSPath, corpusGroupIden, textType, Text2SentMethod, Sent2TokenMethod, TOKENLevel, anno = False, annoKW = {},  **kwargs):
+        
+        ################################################################################################################
+        corpus_name = CORPUSPath.split('/')[-2]
+        Data_Dir = os.path.join('data', corpus_name, TOKENLevel)
+        File_Dir = os.path.join(Data_Dir, 'Pyramid', '_file')
+        cls.Data_Dir = Data_Dir
+        if not os.path.exists(File_Dir):
+            os.makedirs(File_Dir)
+
+        token_file_path = os.path.join(File_Dir, 'token.txt')
+        cls.token_file_path = token_file_path
+        if os.path.isfile(token_file_path):
+            os.remove(token_file_path)
+        
+        ################################################################################################################
+        # TODO: set a concrete and correct description for the annotation arguments.
         assert anno == False or '.' in anno or anno == 'embed'
-        ########################################################
         useSep = Sent2TokenMethod.split('-')[-1] if '-' in Sent2TokenMethod else False
         Channel_Dep_GrainUnqiue = {}
         if TOKENLevel == 'char':
@@ -53,118 +98,139 @@ class BasicObject(object):
                 LGU = getTagDict(tagSet, tagScheme = 'BIOES')
                 DGU = dict(zip(LGU, range(len(LGU))))
                 Channel_Dep_GrainUnqiue[ch] = (LGU, DGU)
-        ########################################################
 
-        ########################################################
-        ################   Things to Save   ####################
-        ########################################################
+
+        ################################################################################################################
+        # init 五大老五奉行
+        # corpus information
         CORPUS = {}
         CORPUS['CORPUSPath'] = CORPUSPath
-        CORPUS['corpusFileIden'] = corpusFileIden # None if Dir else
-        CORPUS['CORPUSType']     = 'File' if corpusFileIden else 'Dir'
+        CORPUS['Data_Dir'] = Data_Dir
+        CORPUS['corpusGroupIden'] = corpusGroupIden # None if Dir else
         CORPUS['textType'] = textType
-        CORPUS['EndIDXFolders'] = []
+        CORPUS['EndIDXGroups'] = []
+        
 
-        FOLDER = {}
-        FOLDER['folderPaths'] = [] 
-        FOLDER['EndIDXTexts'] = []
+        # group information
+        GROUP = {}
+        GROUP['GroupType']   = 'File' if corpusGroupIden else 'Folder'
+        GROUP['group_names'] = [] 
+        GROUP['EndIDXTexts'] = []
                 
+        # text information
         TEXT = {}
         TEXT['EndIDXSents'] = []
         TEXT['Text2SentMethod'] = Text2SentMethod
-        if textType == 'file':
-            TEXT['ORIGFileName'] = []
-        # if anno:
-        if '.' in str(anno):
-            TEXT['ANNOFileName'] = []
+        if textType == 'file': TEXT['ORIGFileName'] = []
+        if '.' in str(anno):   TEXT['ANNOFileName'] = []
             
+        # sentence information
         SENT = {}
-        SENT['EndIDXTokens'] = []
         SENT['Sent2TokenMethod'] = Sent2TokenMethod
-
+        SENT['EndIDXTokens'] = []
+        # even more file information will be included here.
+        SENT['EndIDXTokens_File'] = []
+        
+        # token information
         TOKEN = {}
         TOKEN['TOKENLevel'] = TOKENLevel
-        TOKEN['ORIGToken'] = []
-        ORIGToken = []
-        if anno:
-            TOKEN['ANNOToken'] = []
-            ANNOToken = []
 
-        TOKEN_DEP = {}
-        for ch, method in Channel_Dep_TagSets.items():
-            TOKEN[ch+'TokenIndex'] = []
-            TOKEN_DEP[ch+'TokenIndex'] = []
-
+        # consider how to deal with the annotation information
         ANNO = {}
         ANNO['anno'] = anno
         ANNO['annoKW'] = annoKW
-        ########################################################
 
-        #######################################################################################CORPUS
-        CorpusFolders, CORPUSType = CorpusFoldersReader(CORPUSPath, iden = corpusFileIden)
-        assert CORPUS['CORPUSType'] == CORPUSType
-        pprint(CORPUSType)
+        ################################################################################################################
+        CorpusGroups, GroupType = CorpusGroupsReader(CORPUSPath, iden = corpusGroupIden)
+        assert GROUP['GroupType'] == GroupType
+        pprint(GroupType)
 
-        for folderIdx, folderPath in enumerate(CorpusFolders):
-            ####################################################################FOLDER
-            print(folderPath)
-            fileNames = CorpusFolders[folderPath]
-            FolderTexts = FolderTextsReaders[textType](folderPath, fileNames, anno, **annoKW)
-            
+        ################################################################################################################
+        oldDTU = {}# change this to default dict with int
+        oldLTU = []
+        oldidx2freq = []
+
+        EndIdxSentTokenPosition = np.zeros(DEFAULT_SENT_LENG, dtype = np.uint32)
+        token_num_in_corpus = 0
+
+        for group_idx, group_name in enumerate(CorpusGroups):
+            # the following block deals with each group in a corpus
+            print(group_name)
+            text_names = CorpusGroups[group_name]
+            GroupTexts = FolderTextsReaders[textType](group_name, text_names, anno, **annoKW)
             textIdx = 0
-            for strText_SSET_O_A in FolderTexts:
-
-                ################################################################TEXT
+            for strText_SSET_O_A in GroupTexts:
+                # the following block deals with each text in a group
                 strText, SSETText, origTextName, annoTextName = strText_SSET_O_A
-                strSents = segText2Sents(strText, method = Text2SentMethod, useSep = useSep) # fixed
+                strSents = segText2Sents(strText, method = Text2SentMethod, useSep = useSep) 
                 
                 if len(strSents) == 0 or (anno and len(SSETText) == 0):
-                    # print('Empty Anno strText Or Small Text:', strText)
+                    # skip the sents that are empty and the sents which doesn't have annotations.
                     continue
 
                 for strSent in strSents:
+                    # the following block deals with each strSent in a text.
                     strTokens = segSent2Tokens(strSent, method = Sent2TokenMethod)
-                    ORIGToken.extend(strTokens)
+                    for token in strTokens:
+                        # the following block deals with each token in a text.
+                        if token not in oldDTU:
+                            # deal with new words
+                            token_idx  = len(oldDTU)
+                            oldDTU[token] = token_idx
+                            oldidx2freq.append(1)
+                            oldLTU.append(token)
+                        else:
+                            # deal with old words
+                            token_idx = oldDTU[token]
+                            oldidx2freq[token_idx] += 1
+                        # data.append(token_idx)
+                        # to determine save data or not
+                        # data[token_num_in_corpus] = token_idx
+                        token_num_in_corpus = token_num_in_corpus + 1
+                    # or you can create a file, which is LineSentence type file. each line is a sentence.
+                    with open(token_file_path, 'a') as f:
+                        line_sentence = ' '.join(strTokens) + '\n'
+                        f.write(line_sentence)
 
-                    ###############################################
-                    ############# For Certain Channels ############
-                    ###############################################
-                    if TOKENLevel == 'char' and not useSep:
-                        for ch, method in Channel_Dep_Methods.items():
-                            ch_grain_sent = method(strSent, tokenLevel = TOKENLevel, useStartEnd = False, tagScheme = 'BIOES')
-                            ch_grain_sent = [i[0] for i in ch_grain_sent]
-                            ch_grain_sent = [Channel_Dep_GrainUnqiue[ch][1].get(i, UNK_ID) for i in ch_grain_sent]
-                            TOKEN_DEP[ch + 'TokenIndex'].extend(ch_grain_sent)
-                            assert len(ch_grain_sent) == len(strTokens)
-                    ###############################################
-                    ###############################################
+                    # this is for generating the hyper field information.
+                    # before using the hyper field information, we must know their labels before.
+                    # for ch, hyper_field_method in Channel_Dep_Methods.items():
+                    #     ch_grain_sent = hyper_field_method(strSent, tokenLevel = TOKENLevel, tagScheme = 'BIOES')
+                    #     ch_grain_sent = [i[0] for i in ch_grain_sent]
+                    #     ch_grain_sent = [Channel_Dep_GrainUnqiue[ch][1].get(i, UNK_ID) for i in ch_grain_sent]
+                    #     TOKEN_DEP[ch + 'TokenIndex'].extend(ch_grain_sent)
+                    #     assert len(ch_grain_sent) == len(strTokens)
+
+                    bytelenSent = utf8len(line_sentence)
+                    try:
+                        SENT['EndIDXTokens_File'].append(SENT['EndIDXTokens_File'][-1] + bytelenSent)
+                    except:
+                        SENT['EndIDXTokens_File'].append(bytelenSent)
+
                     lenSent = len(strTokens)
                     try:
                         SENT['EndIDXTokens'].append(SENT['EndIDXTokens'][-1] + lenSent)
                     except:
                         SENT['EndIDXTokens'].append(lenSent)
 
-                if anno and TOKENLevel == 'char': # TODO
-                    #########################################################Anno
+                if anno: 
                     if SSETText == []:
                         print('\nThe SSET of this Text is Empty!!!', '\n', strText, '\n')
                             
-                    ############### PART One: Get CITText ###########
-                    # will check strText and SSET inside getCITText
+                    # PART One: Get CITText; it will check strText and SSET inside getCITText
                     CITText  = getCITText(strText, SSETText,TOKENLevel) 
-                    #################################################          
-                        
-                    ############### PART TWO: Get CITSents ##########
+            
+                    # PART TWO: Get CITSents 
                     CITSents = getCITSents(strSents, CITText)
-                    #################################################          
-                  
-                    ############### PART THREE: Get TOKEN['ANNOToken'] ###########
+                              
+                    # PART THREE: Get TOKEN['ANNOToken'] 
                     for sentIdx, CITSent in enumerate(CITSents):
                         ANNOToken.extend([CITToken[2] for CITToken in CITSent])
+                        # TODO: to add each annotoken one by one based on the annotoken idx.
+
                     if annoTextName:
                         TEXT['ANNOFileName'].append(annoTextName)
-                    #########################################################Anno
-
+                    
                 lenText = len(strSents)
                 try:
                     TEXT['EndIDXSents'].append(TEXT['EndIDXSents'][-1] + lenText)
@@ -173,153 +239,130 @@ class BasicObject(object):
                     
                 if origTextName:
                     TEXT['ORIGFileName'].append(origTextName)
-                ################################################################TEXT
                 
-
                 ################## Log: textIdx in a Folder ################## log
-                if MaxTextIdx:
-                    if textIdx == MaxTextIdx:
-                        break
                 textIdx = textIdx + 1
-                if not textIdx % 100000:
+                if textIdx % 100000 == 0:
                     print(textIdx, '--', len(strSents), len(strText), datetime.now())
-                if textIdx % 1000000 == 0:
-                    if TOKENLevel == 'char':
-                        TOKEN['ORIGToken'].append(np.array(ORIGToken)); ORIGToken = []
-                        if anno:
-                            TOKEN['ANNOToken'].append(np.array(ANNOToken)); ANNOToken = []
-                        if TOKENLevel == 'char' and not useSep:
-                            for ch, method in Channel_Dep_Methods.items():
-                                TOKEN[ch + 'TokenIndex'].append(np.array(TOKEN_DEP[ch + 'TokenIndex']))
-                                TOKEN_DEP[ch + 'TokenIndex'] = []
-                    else:
-                        TOKEN['ORIGToken'].append(ORIGToken); ORIGToken = []
-                ############################################################### log
 
             # Back to Folder
-            # lenFolder = textIdx + 1
-            lenFolder = textIdx
-            FOLDER['folderPaths'].append(folderPath)
+            lenGroup = textIdx
+            GROUP['group_names'].append(group_name)
             try:
-                FOLDER['EndIDXTexts'].append(FOLDER['EndIDXTexts'][-1] + lenFolder)
+                GROUP['EndIDXTexts'].append(GROUP['EndIDXTexts'][-1] + lenGroup)
             except:
-                FOLDER['EndIDXTexts'].append(lenFolder)
-            ####################################################################FOLDER
+                GROUP['EndIDXTexts'].append(lenGroup)
         
-    
-        lenCorpus = folderIdx + 1 # folderIdx might be referenced before assignment
-        CORPUS['EndIDXFolders'] = [lenCorpus]
-        #######################################################################################CORPUS
+        # if there is an error, folderIdx will be referenced before assignment
+        lenCorpus = group_idx + 1 
+        CORPUS['EndIDXGroups'] = [lenCorpus]
+
+        ####################################################################################### 
+        # deal with the data; reorder the LTU and DTU
+
+        print('reorder the frequency ...')
+        idx2freq = np.sort(oldidx2freq)[::-1]
+        newidx2oldidx = np.argsort(oldidx2freq)[::-1]
+        oldidx2newidx = np.zeros(len(newidx2oldidx), dtype= int)
+
+        for new_idx, old_idx in enumerate(newidx2oldidx):
+            oldidx2newidx[old_idx] = new_idx
+
+        LTU = []
+        for new_idx in range(len(oldLTU)):
+            LTU.append(oldLTU[newidx2oldidx[new_idx]])
+        del oldLTU
 
 
-        ########################################################
-        if TOKENLevel == 'char':
-            TOKEN['ORIGToken'].append(np.array(ORIGToken)); del ORIGToken
-            TOKEN['ORIGToken'] = np.concatenate(TOKEN['ORIGToken'])
-            if anno and TOKENLevel == 'char': 
-                TOKEN['ANNOToken'].append(np.array(ANNOToken)); del ANNOToken 
-                TOKEN['ANNOToken'] = np.concatenate(TOKEN['ANNOToken'])
-
-            if TOKENLevel == 'char' and not useSep:
-                for ch, method in Channel_Dep_Methods.items():
-                    TOKEN[ch + 'TokenIndex'].append(np.array(TOKEN_DEP[ch + 'TokenIndex'])); del TOKEN_DEP[ch + 'TokenIndex'] 
-                    TOKEN[ch + 'TokenIndex'] = np.concatenate(TOKEN[ch + 'TokenIndex'])
-        else:
-            TOKEN['ORIGToken'].append(ORIGToken); del ORIGToken
-            TOKEN['ORIGToken'] = sum(TOKEN['ORIGToken'], [])
-            # TODO
-        ########################################################
-
-
-        ########################################################
-        print('Total Num of All    Tokens', len(TOKEN['ORIGToken']))
-        # TOKEN['ORIGToken'] = list(TOKEN['ORIGToken'])
-        # print(datetime.now())
-        TOKEN['ORIGTokenIndex'], LTU, DTU, DTU_freq =  buildTokens(TOKEN['ORIGToken'], MaxTokenUnique)
-        # print(datetime.now())
-        del TOKEN['ORIGToken']
+        DTU = {}
+        for new_idx, token in enumerate(LTU):
+            DTU[token] = new_idx
+        del oldDTU
         
+        del oldidx2newidx
+        del newidx2oldidx
+
+        # TOKEN['ORIGTokenIndex'] = data
+        print('Total Num of All    Tokens', token_num_in_corpus)
         print('Total Num of Unique Tokens', len(LTU))
-        corpus_name = CORPUSPath.split('/')[-2]
-        TokenNum_Dir = os.path.join('data', corpus_name, TOKENLevel, 'Token'+str(len(LTU)))
 
-        CORPUS['TokenNum_Dir'] = TokenNum_Dir
-        if not os.path.exists(TokenNum_Dir):
-            os.makedirs(TokenNum_Dir)
+        # ########################################################
+        # if anno and TOKENLevel == 'char':
+        #     annoGrainList = list(set(TOKEN['ANNOToken']))
+        #     channel_name = 'annoE-es'
+        #     tagSet = list(set([i.split('-')[0] for i in annoGrainList]))
+        #     LGU = getTagDict(tagSet, tagScheme = 'BIOES')
+        #     DGU = dict(zip(LGU, range(len(LGU))))
+        #     GU = (LGU, DGU)
+        #     GRAIN_UNI[TokenNum_Dir][channel_name] = GU
+        #     print(LGU)
+        #     L = []
+        #     for i in TOKEN['ANNOToken']:
+        #         split = i.split('-')
+        #         if split[0] == 'O':
+        #             L.append(DGU["O"])
+        #         else:
+        #             L.append(DGU['-'.join([split[0], split[-1]])])
+        #     TOKEN['ANNOTokenIndex'] = np.array(L, dtype = np.uint32)
+        #     del TOKEN['ANNOToken']
+        # ########################################################
 
-        # token GrainUnique (TokenUnique)
-        GRAIN_UNI = {}
-        GRAIN_UNI[TokenNum_Dir] = {'token': (LTU, DTU)}
-        # channel_name_path = os.path.join(TokenNum_Dir, 'token.tsv')
-        # writeGrainList2File(channel_name_path, LTU)
-        # print('\t\tWrite to:', channel_name_path)
-        ########################################################
+        # ########################################################
+        # # only BIOES, keep getGrainUnique part.
+        # if TOKENLevel == 'char' and not useSep:
+        #     for ch, GrainUnique in Channel_Dep_GrainUnqiue.items():
+        #         channel_name = ch + '-es'
+        #         GRAIN_UNI[TokenNum_Dir][channel_name] = GrainUnique
+        # ########################################################
 
-        ########################################################
-        if anno and TOKENLevel == 'char':
-            annoGrainList = list(set(TOKEN['ANNOToken']))
-            channel_name = 'annoE-es'
-            tagSet = list(set([i.split('-')[0] for i in annoGrainList]))
-            LGU = getTagDict(tagSet, tagScheme = 'BIOES')
-            DGU = dict(zip(LGU, range(len(LGU))))
-            GU = (LGU, DGU)
-            GRAIN_UNI[TokenNum_Dir][channel_name] = GU
-            print(LGU)
-            L = []
-            for i in TOKEN['ANNOToken']:
-                split = i.split('-')
-                if split[0] == 'O':
-                    L.append(DGU["O"])
-                else:
-                    L.append(DGU['-'.join([split[0], split[-1]])])
-            TOKEN['ANNOTokenIndex'] = np.array(L, dtype = np.uint32)
-            del TOKEN['ANNOToken']
-        ########################################################
+        # load 五大老五奉行
+        CORPUS['EndIDXGroups'] = np.array(CORPUS['EndIDXGroups'], dtype = np.uint32)
+        CORPUS['length']       = len(CORPUS['EndIDXGroups'])
 
-        ########################################################
-        # only BIOES, keep getGrainUnique part.
-        if TOKENLevel == 'char' and not useSep:
-            for ch, GrainUnique in Channel_Dep_GrainUnqiue.items():
-                channel_name = ch + '-es'
-                GRAIN_UNI[TokenNum_Dir][channel_name] = GrainUnique
-        ########################################################
+        GROUP['EndIDXTexts']   = np.array(GROUP['EndIDXTexts'], dtype = np.uint32)
+        GROUP['length']        = len(GROUP['EndIDXTexts'])
 
-        CORPUS['EndIDXFolders'] = np.array(CORPUS['EndIDXFolders'], dtype = np.uint32)
-        CORPUS['length']        = len(CORPUS['EndIDXFolders'])
+        TEXT['EndIDXSents']    = np.array(TEXT['EndIDXSents'],   dtype = np.uint32)
+        TEXT['length']         = len(TEXT['EndIDXSents'])
 
-        FOLDER['EndIDXTexts']   = np.array(FOLDER['EndIDXTexts'], dtype = np.uint32)
-        FOLDER['length']        = len(FOLDER['EndIDXTexts'])
+        SENT['EndIDXTokens']   = np.array(SENT['EndIDXTokens'],  dtype = np.uint32)
+        SENT['length']         = len(SENT['EndIDXTokens'])
+        # add more options
+        SENT['EndIDXTokens_File'] = np.array(SENT['EndIDXTokens_File'],  dtype = np.uint32)
 
-        TEXT['EndIDXSents']     = np.array(TEXT['EndIDXSents'],   dtype = np.uint32)
-        TEXT['length']          = len(TEXT['EndIDXSents'])
-
-        SENT['EndIDXTokens']    = np.array(SENT['EndIDXTokens'],  dtype = np.uint32)
-        SENT['length']          = len(SENT['EndIDXTokens'])
-
-        TOKEN['length']         = len(TOKEN['ORIGTokenIndex'])
+        TOKEN['length']        = token_num_in_corpus
         
         cls.CORPUS = CORPUS
-        cls.FOLDER = FOLDER
+        cls.GROUP  = GROUP
         cls.TEXT   = TEXT
         cls.SENT   = SENT
         cls.TOKEN  = TOKEN
-        cls.TokenUnique = (LTU, DTU)
-        cls.DTU_freq = DTU_freq
-        cls.GRAIN_UNI = GRAIN_UNI
-        cls.TokenNum_Dir = TokenNum_Dir
+        
+        # load Vocab
+        cls.idx2freq  = idx2freq
+        
+        cls.idx2token = LTU
+        cls.token2idx = DTU
+        cls.TokenVocab = (cls.idx2token, cls.token2idx)
+
+        cls.VOCAB = {}
+        cls.VOCAB[Data_Dir] = {'token': cls.TokenVocab}
+
         cls.OBJECT_TO_PICKLE()
+        # TODO: to enrich the GRAIN_VOCAB
+        
 
     @classmethod
     def OBJECT_TO_PICKLE(cls):
 
-        TokenNum_Dir = cls.TokenNum_Dir
-
-        ##########################################################
-        Pyramid_Dir = os.path.join(TokenNum_Dir, 'Pyramid')
+        Data_Dir    = cls.Data_Dir
+        
+        ################################################################################
+        Pyramid_Dir = os.path.join(Data_Dir, 'Pyramid')
         if not os.path.exists(Pyramid_Dir):
             os.makedirs(Pyramid_Dir)
         d = {'CORPUS': cls.CORPUS, 
-             'FOLDER': cls.FOLDER, 
+             'GROUP':  cls.GROUP, 
              'TEXT':   cls.TEXT, 
              'SENT':   cls.SENT, 
              'TOKEN':  cls.TOKEN}
@@ -330,32 +373,28 @@ class BasicObject(object):
                 print(k + '\tit is Dumped into file:', pickle_path)
                 print(k + '\tthe length of it is   :', v['length'])
         print('*'*40, '\n')
-        ##########################################################
 
-
-        ##########################################################
-        GU_Dir = os.path.join(TokenNum_Dir, 'GrainUnique')
-        if not os.path.exists(GU_Dir):
-            os.makedirs(GU_Dir)
-        for k, v in cls.GRAIN_UNI[TokenNum_Dir].items():
-            pickle_path = os.path.join(GU_Dir, k + '.voc')
+        ################################################################################
+        GV_Dir = os.path.join(Data_Dir, 'Vocab')
+        if not os.path.exists(GV_Dir):
+            os.makedirs(GV_Dir)
+        for k, v in cls.VOCAB[Data_Dir].items():
+            pickle_path = os.path.join(GV_Dir, k + '.voc')
             with open(pickle_path, 'wb') as handle:
                 # v is (LGU, DGU)
                 pickle.dump(v, handle, protocol=4)
                 print(k + '\tis Dumped into file:', pickle_path)
                 print(k + '\tthe length of it is   :', len(v[0]))
-            channel_name_path = os.path.join(GU_Dir, k + '.tsv')
+            channel_name_path = os.path.join(GV_Dir, k + '.tsv')
             writeGrainList2File(channel_name_path, v[0])
             print('\t\tWrite to:', channel_name_path)
 
-        pickle_path = os.path.join(GU_Dir, 'token.freq')
+        ################################################################################ 
+        pickle_path = os.path.join(GV_Dir, 'token.freq')
         with open(pickle_path, 'wb') as handle:
-            # v is (LGU, DGU)
-            pickle.dump(cls.DTU_freq, handle, protocol=4)
-            # print(k + '\tis Dumped into file:', pickle_path)
-            # print(k + '\tthe length of it is   :', len(v[0]))
+            pickle.dump(cls.idx2freq, handle, protocol=4)
         print('*'*40)
-        ##########################################################
+        
 
     @classmethod
     def INIT_FROM_PICKLE(cls, Pyramid_Dir, GrainUnique_Dir):
@@ -365,7 +404,7 @@ class BasicObject(object):
         ##########################################################
         # Pyramid_Dir = Path2Pyramid
         # layer_names = [i.replace('.p', '') for i in os.listdir(Pyramid_Dir) if '.p' in i]
-        layer_names = ['CORPUS', 'FOLDER','TEXT', 'SENT','TOKEN' ]
+        layer_names = ['CORPUS', 'GROUP','TEXT', 'SENT','TOKEN' ]
         for layer_name in layer_names:
             pickle_path = os.path.join(Pyramid_Dir, layer_name + '.p')
             with open(pickle_path, 'rb') as handle:
@@ -381,8 +420,6 @@ class BasicObject(object):
         cls.GRAIN_UNI[cls.TokenNum_Dir] = {}
 
         ##########################################################
-        # GrainUnique_Dir = Path2LGUnique
-        # channel_names = [i.replace('.p', '') for i in os.listdir(LGU_Dir) if '.p' in i]
         channel_names = ['token'] # only put token in the LGUT
         # Don't need to read all of them.
         for channel_name in channel_names:
@@ -394,7 +431,6 @@ class BasicObject(object):
                 print(channel_name + '\tthe length of it is   :', len(v[0]))
         print('*'*40, '\n')
         ##########################################################
-        # cls.TEXT['Text2SentMethod'] = 're'
         cls.TokenUnique = cls.GRAIN_UNI[cls.TokenNum_Dir]['token'] # (LTU & DTU) 
 
 
