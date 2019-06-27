@@ -11,10 +11,10 @@ nlptext/__pycache__/
 
 nlptext/__pycache__/base.cpython-36.pyc
 
-dataset/LuohuCorpus*/
-dataset/LuohuNER/
-dataset/ccks/
-dataset/WikiTotal/
+corpus/LuohuCorpus*/
+corpus/LuohuNER/
+corpus/ccks/
+corpus/Wiki*/
 
 
 output/
