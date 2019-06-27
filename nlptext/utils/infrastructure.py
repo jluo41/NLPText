@@ -14,6 +14,10 @@ UNK_ID   = specialTokensDict[UNK]
 
 
 ############### PART CODE
+def any2unicode(text, encoding='utf8', errors='strict'):
+    if isinstance(text, str):
+        return text
+    return str(text, encoding, errors=errors)
 
 def strQ2B(ustring):
     rstring = ''
@@ -25,8 +29,6 @@ def strQ2B(ustring):
             inside_code -= 65248
         rstring += chr(inside_code)
     return rstring
-
-
 ############### PART Input and Output 
 
 def fileReader(path):
@@ -54,28 +56,26 @@ def readPickleFile2GrainUnique(channel_name_path):
     return v  #(LGU, DGU)
 
 ############### PART BIOES Labels and Transformation.
-# input: ['不确定', '修饰',  '检查', '疾病', '症状']
-# ouput: ['</pad>', '</start>', '</end>', 'O', '不确定-B', '不确定-I', '修饰-B', '修饰-I', '检查-B', '检查-I', '疾病-B', '疾病-I', '症状-B', '症状-I']
-def getTagDict(TagList, tagScheme = 'BIO'):
+# labels
+# input: ['不确定', '修饰',  '检查', '疾病', '症状'] 
+# tags
+# ouput: ['O', '不确定-B', '不确定-I', '修饰-B', '修饰-I', '检查-B', '检查-I', '疾病-B', '疾病-I', '症状-B', '症状-I']
+def getTagDict(labels, tagScheme = 'BIOES'):
     L = []
     suffices = ['-B', '-I']
     if 'O' in tagScheme:
-        pref = specialTokens[:-1] + ['O']
-    
+        pref = ['O'] # remove speicial token
     else:
-        pref = specialTokens[:-1] # without UNK
+        pref = []
     if 'E' in tagScheme:
         suffices = suffices + ['-E']
     if 'S' in tagScheme:
         suffices = suffices + ['-S']
-
-    TagList = [i for i in TagList if i !='O']
-    for tag in TagList:
-
+    tags = [i for i in labels if i !='O']
+    for tag in tags:
         L.extend([tag+suff for suff in suffices])
     L.sort()
     L = pref + L
-    
     return L
 
 def trans_bioesTag(channel, bioesTag, tagScheme):
@@ -96,9 +96,9 @@ def trans_bioesTag(channel, bioesTag, tagScheme):
         return i.split('-')[-1] 
     else:
         return i
+        
 
 ############### PART Char To Word
-
 def modify_wordBoundary_with_hyperBoundary(pos_sent, anno_sent):
     # return the new word_boundary with BIO tagScheme.
     pos_sent = [i.replace('-S', '-B').replace('-E', '-I') for i in pos_sent]

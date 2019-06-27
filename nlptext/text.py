@@ -12,7 +12,7 @@ from .base import BasicObject
 from .sentence import Sentence
 from .token import Token
 
-from .utils.pyramid import segText2Sents
+from .utils.pyramid import segText2Sents, get_lines_with_position
 
 class Text(BasicObject):
 
@@ -32,7 +32,16 @@ class Text(BasicObject):
         if self._text:
             return self._text
         else:
-            return ''.join([tk.token for tk in self.Tokens])
+            start_position = self.start_position('token')
+            s, e = self.IdxSentStartEnd
+            num_lines = e - s 
+            return get_lines_with_position(self.Channel_Hyper_Path['token'], start_position, num_lines)
+
+    def start_position(self, channel):
+        sentIdx = self.IdxSentStartEnd[0]
+        start_position = self.SENT[self.Channel_Hyper_Path[channel]][sentIdx-1] if sentIdx != 0 else 0
+        return start_position
+    
 
     @property 
     def IdxCorpus(self):

@@ -12,7 +12,6 @@ class Folder(BasicObject):
     def __init__(self, Idx = 0):
         self.Idx = Idx
 
-
     @property
     def name(self):
         return self.FOLDER['folderPaths'][self.Idx]
@@ -56,6 +55,7 @@ class Folder(BasicObject):
     def Sentences(self):
         return [Sentence(Idx) for Idx in range(*self.IdxSentStartEnd)]
 
+    # this seems to handle
     @property
     def Tokens(self):
         return [Token(Idx)    for Idx in range(*self.IdxTokenStartEnd)]

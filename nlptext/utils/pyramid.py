@@ -5,19 +5,21 @@ import pickle
 import json
 import pandas as pd
 from datetime import datetime
+from smart_open import smart_open
+import itertools
 
-from .infrastructure import strQ2B, fileReader
+from .infrastructure import strQ2B, fileReader, any2unicode
 
 ##################################################################################################CORPUS-FOLDER
 # Important One 
-def CorpusFoldersReader(CORPUSPath, iden = None):
+def CorpusGroupsReader(CORPUSPath, iden = None):
     # file is the priority
     if iden:
         corpusFiles = [i for i in os.listdir(CORPUSPath) if iden in i]
         return {os.path.join(CORPUSPath, fd): '' for fd in corpusFiles}, 'File'
     else:
         results = [x for x in os.walk(CORPUSPath) if x[2]]
-        return {i[0]: i[2] for i in results},                            'Dir'
+        return {i[0]: i[2] for i in results}, 'Dir'
 
         
 def geneTextFilePaths(corpusPath, orig_iden = '.txt', anno_iden = None):
@@ -82,9 +84,6 @@ def textFileReader(folderPath, fileNames, anno = False, sep = '\t', notZeroIndex
                     
                 SSETText = [sset.split(sep)[-4:] for sset in strAnnoText.split('\n') if sep in sset]
                 SSETText = [[sset[0], int(sset[1]) - notZeroIndex, int(sset[2]), sset[3]] for sset in SSETText] 
-                
-                #- print(strText)
-                #- print(SSETText)
 
                 ### something different
                 txtCharIdx = 0
@@ -95,9 +94,6 @@ def textFileReader(folderPath, fileNames, anno = False, sep = '\t', notZeroIndex
                     string = string.replace('@', ' ') # TODO
                     lenString = len(string)
                     while string != strText[txtCharIdx: txtCharIdx + lenString]:
-                        # Detect and Debug errors here.
-                        # in case there is no enough sentences.
-                        # print('--', txtCharIdx, '--', string)
                         txtCharIdx = txtCharIdx + 1
 
                     SSETText[ssetIdx] = [string, txtCharIdx, txtCharIdx + lenString, t ]
@@ -129,9 +125,10 @@ def textFileReader(folderPath, fileNames, anno = False, sep = '\t', notZeroIndex
 
 
 def textLineReader(folderPath, fileNames, anno = False, **kwargs):
-    with open(folderPath, 'r', encoding = 'utf-8') as f:
-        for line in f:
-            line = strQ2B(line)
+    with smart_open(folderPath) as fin:
+        for line in itertools.islice(fin, None):
+            # print(line)
+            line = strQ2B(any2unicode(line))
             SSETText = []
             strText = ''
             if anno == 'embed':
@@ -302,7 +299,6 @@ def tokenText2Sent(text):
     return sents
 
 def segText2Sents(text, method = 'whole', **kwargs):
-    
     '''
     text:
         1. textfilepath. 2. text-level string
@@ -445,3 +441,16 @@ def getSSET_from_CIT(orig_seq, tag_seq, tag_seq_tagScheme = 'BIO', join_char = '
                 
     return entitiesList
 ##################################################################################################TEXT-ANNO
+
+
+
+def get_lines_with_position(path, start_position, num_lines):
+    lines = []
+    with open(path, 'r') as f:
+        f.seek(start_position)
+        for line in f.readlines():
+            lines.append(line)
+            if len(lines) >= num_lines:
+                break
+    return lines
+
