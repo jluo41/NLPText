@@ -20,11 +20,11 @@
 
 From Corpus to Groups to Texts to Sentences to Tokens
 
-1. Save COPRUS, GROUP, TEXT, SENT and TOKEN
+1. Save `COPRUS`, `GROUP`, `TEXT`, `SENT` and `TOKEN`
 
-2. Save token to file/token.txt.
+2. Save token to `file/token.txt`.
 
-3. Get Token Vocabulary (idx2token, token2index), and token frequency (idx2freq).
+3. Get Token Vocabulary (`idx2token`, `token2index`), and token frequency (`idx2freq`).
 
 # 2. Query
 
@@ -38,13 +38,13 @@ From Corpus to Groups to Texts to Sentences to Tokens
 
 # 3. Annotation
 
-1. By whatever means, from group to texts, for each texts, we need to prepare [strText:str, SSET:[content:str, start:int, end:int, label: str]]. Besides, we need to verify that SSET is valid for strText.
+1. By whatever means, from group to texts, for each texts, we need to prepare `[strText:str, SSET:[content:str, start:int, end:int, label: str]]`. Besides, we need to verify that SSET is valid for strText.
 
-2. Then strText is processed to strSents: [strSent:str].
+2. Then strText is processed to `strSents: [strSent:str]`.
 
 3. Together with strText and strSents, we use SSET to get the tag sequence for each strSent. The tag is in the BIOES tag scheme. However, instead of saving the tag string, we save the tag idx this time.
 
-4. Save the token to file/annoE_idx.txt. Each line is the tag seqeuence correponding to the line of the original sentence in file/token.txt
+4. Save the token to `file/annoE_idx.txt`. Each line is the tag seqeuence correponding to the line of the original sentence in `file/token.txt`.
 
 5. We also need to query the annotation tag sequence from that file.
 
@@ -59,7 +59,7 @@ For example, a part-of-speech entity corresponds to exactly one word. When the t
 
 1. We need to develop a function to get hyper field grains for a given sentence.
 
-2. This is on the process of sentence to tokens. Input is strSent: str, and output is tokens[token:str] and tags[tag:str], where tag is of BIOES tagging scheme. Similar to annotation, we also only save the tag idx and save all of them into file/pos_idx.txt.
+2. This is on the process of sentence to tokens. Input is strSent: str, and output is `tokens: [token:str]` and `tags: [tag:str]`, where tag is of BIOES tagging scheme. Similar to annotation, we also only save the tag idx and save all of them into file/pos_idx.txt.
 
 3. We also need to query the annotation tag sequence from that file.
 
