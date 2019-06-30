@@ -299,19 +299,7 @@ def tokenText2Sent(text):
     return sents
 
 def segText2Sents(text, method = 'whole', **kwargs):
-    '''
-    text:
-        1. textfilepath. 2. text-level string
-    method: 
-        1. 'whole': when text is a text-level string,then use this text-level string as sent-level string directly.
-                    and return text = [sent-level string].
-        2. `funct`: when method is a function, whose input is a text-level string,
-                    then return text = funct(text) = [..., sent-level string, ...]
-        3. 'line' : string. when text is filepath where each line is a sentence
-                    then return a generator text = generate(text), item is a sent-level string.
-        4. 'token': when strText is a list of tokens, cut the text into sentences. 
-                    return text = [[sentence 1], [sentence 2], ... ]         
-    '''
+    # TODO: we need to consider the situation where text is a list instead of a string.
     if method == 'token':
         return tokenText2Sent(text)
     if os.path.isfile(text):
@@ -321,8 +309,9 @@ def segText2Sents(text, method = 'whole', **kwargs):
         else:
             text = fileReader(text)
     if method == 'whole':
-        return [text]
+        return [text.replace('\n', '')]
     elif method == 're':
+        # re still need more method to consider the final results.
         return reCutText2Sent(text, **kwargs)
     else:
         return method(text, **kwargs)
@@ -331,10 +320,10 @@ def segText2Sents(text, method = 'whole', **kwargs):
 ##################################################################################################SENT-TOKEN
 def segSent2Tokens(sent, method = 'iter'):
     if method == 'iter':
-        return [i for i in sent]
+        return [i.replace(' ', '') for i in sent]
     elif method[:4] == 'sep-':
         sep = method.replace('sep-', '')
-        return [i for i in sent.split(sep) if i != '']
+        return [i.replace(' ', '') for i in sent.split(sep) if i != '']
 ##################################################################################################SENT-TOKEN
 
 
@@ -376,7 +365,6 @@ def getCITText(strText, SSETText, TOKENLevel='char'):
                 print(sset[0])
 
             CITText.append(sset)
-
     return CITText
 
 def getCITSents(strSents, CITText):
@@ -440,13 +428,13 @@ def getSSET_from_CIT(orig_seq, tag_seq, tag_seq_tagScheme = 'BIO', join_char = '
     #             pprint(list(zip(orig_seq, tag_seq)))
                 
     return entitiesList
-##################################################################################################TEXT-ANNO
+
 
 def get_line_with_position(path, start_position):
     with open(path, 'r', encoding = 'utf-8') as f:
         f.seek(start_position)
         line = f.readline()
-    return line 
+    return line[:-1]
 
 def get_lines_with_position(path, start_position, num_lines):
     lines = ''
@@ -458,7 +446,7 @@ def get_lines_with_position(path, start_position, num_lines):
             i = i + 1
             if i >= num_lines:
                 break
-    return lines
+    return lines[:-1]
 
 def read_file_chunk_string(path, startbyteidx, endbyteidx):
     with open(path, 'r',  encoding = 'utf-8') as fin:
@@ -471,4 +459,3 @@ def read_file_chunk_string(path, startbyteidx, endbyteidx):
             if fin.tell() >= endbyteidx:
                 break
     return data[:-1]
-

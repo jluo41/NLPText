@@ -202,10 +202,6 @@ class Sentence(BasicObject):
         return sent
 
     @property
-    def TokensStartEnd(self):
-        return [START_TK]  + self.Tokens + [END_TK]
-
-    @property
     def length(self):
         if self._sentence:
             length = len(self.Tokens)

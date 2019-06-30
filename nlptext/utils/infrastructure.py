@@ -97,7 +97,6 @@ def trans_bioesTag(channel, bioesTag, tagScheme):
     else:
         return i
         
-
 ############### PART Char To Word
 def modify_wordBoundary_with_hyperBoundary(pos_sent, anno_sent):
     # return the new word_boundary with BIO tagScheme.

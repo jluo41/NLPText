@@ -32,7 +32,7 @@ class Text(BasicObject):
         if self._text:
             return self._text
         else:
-            start_position, end_position = self.start_position('token'), self.end_position('token')
+            start_position, end_position = self.start_end_position('token')
             # s, e = self.IdxSentStartEnd
             # num_lines = e - s 
             return read_file_chunk_string(self.Channel_Hyper_Path['token'], start_position, end_position)
@@ -40,7 +40,7 @@ class Text(BasicObject):
     def start_end_position(self, channel):
         startsentIdx, endsentIdx = self.IdxSentStartEnd
         start_position = self.SENT[self.Channel_Hyper_Path[channel]][startsentIdx-1] if startsentIdx != 0 else 0
-        end_position   = self.SENT[self.Channel_Hyper_Path[channel]][endsentIdx-1]
+        end_position   = self.SENT[self.Channel_Hyper_Path[channel]][endsentIdx - 1]
         return start_position, end_position
 
     @property 
@@ -91,8 +91,13 @@ class Text(BasicObject):
             return [Token(Idx)    for Idx in range(*self.IdxTokenStartEnd)]
 
     @property
-    def TokensStartEnd(self):
-        return sum([st.TokensStartEnd for st in self.Sentences], [])
+    def length(self):
+        if self._text:
+            length = len(self.Tokens)
+        else:
+            s, e = self.IdxTokenStartEnd 
+            length = e - s
+        return length
     
 
     def __repr__(self):
