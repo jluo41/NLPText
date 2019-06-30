@@ -32,7 +32,7 @@ class Sentence(BasicObject):
             elif type(self._sentence) == list:
                 return ''.join(self._sentence)
         else:
-            start_position = self.start_position('token')
+            start_position, _ = self.start_end_position('token')
             return get_line_with_position(self.Channel_Hyper_Path['token'], start_position)
 
     def getChannelGrain(self, channel,  Max_Ngram = 1, tagScheme = 'BIO',  useStartEnd = False, end_grain = False):
@@ -165,18 +165,14 @@ class Sentence(BasicObject):
     def IdxTokenStartEnd(self):
         s, e = self.Idx, self.Idx + 1
         s = self.SENT['EndIDXTokens'][s-1] if s != 0 else 0
-        e = self.SENT['EndIDXTokens'][e-1] if e != 0 else 0
+        e = self.SENT['EndIDXTokens'][e-1] 
         return s, e 
 
-    def byteStartEndPosition(self, channel):
+    def start_end_position(self, channel):
         s, e = self.Idx, self.Idx + 1
         s = self.SENT[self.Channel_Hyper_Path[channel]][s-1] if s != 0 else 0
-        e = self.SENT[self.Channel_Hyper_Path[channel]][e-1] if e != 0 else 0
+        e = self.SENT[self.Channel_Hyper_Path[channel]][e-1] 
         return s, e
-
-    def start_position(self, channel):
-        start_position = self.SENT[self.Channel_Hyper_Path[channel]][self.Idx-1] if self.Idx != 0 else 0
-        return start_position
 
     @property
     def Corpus(self):

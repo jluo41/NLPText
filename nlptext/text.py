@@ -12,7 +12,7 @@ from .base import BasicObject
 from .sentence import Sentence
 from .token import Token
 
-from .utils.pyramid import segText2Sents, get_lines_with_position
+from .utils.pyramid import segText2Sents, get_lines_with_position, read_file_chunk_string
 
 class Text(BasicObject):
 
@@ -32,16 +32,16 @@ class Text(BasicObject):
         if self._text:
             return self._text
         else:
-            start_position = self.start_position('token')
-            s, e = self.IdxSentStartEnd
-            num_lines = e - s 
-            return get_lines_with_position(self.Channel_Hyper_Path['token'], start_position, num_lines)
+            start_position, end_position = self.start_position('token'), self.end_position('token')
+            # s, e = self.IdxSentStartEnd
+            # num_lines = e - s 
+            return read_file_chunk_string(self.Channel_Hyper_Path['token'], start_position, end_position)
 
-    def start_position(self, channel):
-        sentIdx = self.IdxSentStartEnd[0]
-        start_position = self.SENT[self.Channel_Hyper_Path[channel]][sentIdx-1] if sentIdx != 0 else 0
-        return start_position
-    
+    def start_end_position(self, channel):
+        startsentIdx, endsentIdx = self.IdxSentStartEnd
+        start_position = self.SENT[self.Channel_Hyper_Path[channel]][startsentIdx-1] if startsentIdx != 0 else 0
+        end_position   = self.SENT[self.Channel_Hyper_Path[channel]][endsentIdx-1]
+        return start_position, end_position
 
     @property 
     def IdxCorpus(self):

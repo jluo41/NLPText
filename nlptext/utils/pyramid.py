@@ -442,15 +442,33 @@ def getSSET_from_CIT(orig_seq, tag_seq, tag_seq_tagScheme = 'BIO', join_char = '
     return entitiesList
 ##################################################################################################TEXT-ANNO
 
-
+def get_line_with_position(path, start_position):
+    with open(path, 'r', encoding = 'utf-8') as f:
+        f.seek(start_position)
+        line = f.readline()
+    return line 
 
 def get_lines_with_position(path, start_position, num_lines):
-    lines = []
-    with open(path, 'r') as f:
+    lines = ''
+    i = 0
+    with open(path, 'r', encoding = 'utf-8') as f:
         f.seek(start_position)
         for line in f.readlines():
-            lines.append(line)
-            if len(lines) >= num_lines:
+            lines = lines + line 
+            i = i + 1
+            if i >= num_lines:
                 break
     return lines
+
+def read_file_chunk_string(path, startbyteidx, endbyteidx):
+    with open(path, 'r',  encoding = 'utf-8') as fin:
+        fin.seek(startbyteidx)
+        data = ''
+        while True:
+            data = data + fin.readline()
+            # fin.tell() equal to endbyteidx is very rigid
+            # we can use >= instead.
+            if fin.tell() >= endbyteidx:
+                break
+    return data[:-1]
 
