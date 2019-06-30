@@ -101,5 +101,106 @@ For sentences and tokens, whether they are from our corpus pyramid or are newly 
 
 They are APIs for further tasks.
 
-# 8. 
+# 8. Chunk of Texts or Sentences
+
+Sometimes we need a chunk of texts or sentences where the number of tokens numbers in this chunk is close to and smaller than a constant, say, 10000. One scenario is for word embedding training.
+
+Use text as an instance, the data we want is: chunkidx2endtxtidx.
+
+For each chunk, get all text idxs in it. From startidx to endidx.
+
+The following still uses text as the instance. The concrete operation:
+
+```
+chunkidx_2_endbyteidx = [] # the text that is not included inside this chunk.
+chunkidx_2_cumlengoftexts = []
+
+current_chunk_lengoftexts = []
+current_chunk_length_count = 0
+for text in texts:
+	text_token_num = text.get_tokens_num()
+	
+	if current_chunk_length_count + text_token_num > 10000:
+		
+		# get and save the chunkendbyteidx
+		# this is correct, notice that this text is not include in this chunk
+		
+		endbyteidx = text.get_endbyteidx() 
+		chunkidx_2_endbyteidx.append(endbyteidx)
+
+		# save the txtidx2endtokenidx, derived from lengoftexts
+		chunkidx_2_cumlengoftexts.append(np.cumsum(current_chunk_lengoftexts))
+
+		# get the new the current chunk information
+		current_chunk_length_count = text_token_num
+		current_chunk_lengoftexts = [text_token_num]
+
+	else:
+		# update current_chunk_length_count when it is <= 10000
+		current_chunk_length_count = current_chunk_length_count + text_token_num
+
+		# append the object's length in the current_chunk_lengoftexts
+		current_chunk_lengoftexts.append(text_token_num)
+
+# when the loop is over, we still need the to append 
+# the last small chunk into the total chunks.
+# here, the object is the smallest object.
+endbyteidx = object.get_endbyteidx()
+chunkidx_2_endbyteidx.append(endbyteidx)
+
+# save the txtidx2endtokenidx, derived from lengoftexts
+chunkidx_2_cumlengoftexts.append(np.cumsum(current_chunk_lengoftexts))
+```
+
+Eventually, we get chunkidx_2_endbyteidx and chunkidx_2_cumlengoftexts.
+
+Then we should think out how to produce jobs. Each chunk is for one job.
+
+```
+# the file we need to read is of path: path_token
+job_paras = []
+for chunkidx in range(len(chunkidx_2_endbyteidx)):
+	startbyteidx = 0 if chunkidx == 0 else chunkidx_2_endbyteidx[chunkidx-1]
+	endbyteidx = chunkidx_2_endbyteidx[chunkidx-1]
+	chunk_token_string = read_str_from_file(path_token, startbyteidx, endbyteidx)
+	# for the text in the chunk.
+	txtidx2endtokenidx = chunkidx_2_lengoftexts[chunk_string]
+	job_para = (chunk_token_string, txtidx2endtokenidx)
+	job_paras.append(job_para)
+```
+
+Inside the fieldembed_core.pyx, the method is:
+
+```
+# for the input: chunk_tokens (i.e. chunk_token_string), txtidx2endtokenidx.
+# we first prepare chunk_token_seq.
+
+chunk_tokens = chunk_tokens.split() # i.e. chunk_token_seq
+
+# then loop the text sequence in chunk_tokens
+
+token_indexes = []
+text_endidx   = []
+
+new_chunk_idx = 0
+
+
+for txtidx, endtokenidx in enumerate(txtidx2endtokenidx):
+	starttokenidx = 0 if txtidx == 0 else txtidx2endtokenidx[endtokenidx - 1]
+	for tokenidx in range(starttokenidx, endtokenidx):
+		tokenstr = get_token_str(tokenidx)
+		tokenvocidx = get_token_vocidx(tokenstr)
+		
+		if tokenvocidx not meets conditions:
+			continue
+
+		token_indexes.append(tokenvocidx)
+		new_chunk_idx = new_chunk_idx + 1
+
+	text_endidx.append(new_chunk_idx)
+
+# at the end, we get token_indexes, text_endidx, new_chunk_idx.
+
+```
+
 
