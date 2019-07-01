@@ -35,6 +35,12 @@ class Sentence(BasicObject):
             start_position, _ = self.start_end_position('token')
             return get_line_with_position(self.Channel_Hyper_Path['token'], start_position)
 
+
+    def get_stored_hyperinfo(self, channel):
+        start_position, _ = self.start_end_position(channel)
+        return get_line_with_position(self.Channel_Hyper_Path[channel], start_position)
+
+
     def getChannelGrain(self, channel,  Max_Ngram = 1, tagScheme = 'BIO',  useStartEnd = False, end_grain = False):
         channelToken = 'ANNOTokenIndex' if 'anno' in  channel else channel + 'TokenIndex'
         

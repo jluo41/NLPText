@@ -33,10 +33,6 @@ DEFAULT_SENT_LENG = 5000000
 # DTU['New'] = 10
 # token(123) = "New", perhaps there is another token_locidx which is also "New".
 
-
-processed_data_path = 'processed_data.txt'
-
-
 def utf8len(s):
     return len(s.encode('utf-8'))
 
@@ -70,8 +66,13 @@ class BasicObject(object):
     CHANNEL_ABBR         = CHANNEL_ABBR
 
     @classmethod
-    def INIT(cls, CORPUSPath, corpusGroupIden, textType, Text2SentMethod, Sent2TokenMethod, TOKENLevel, anno = False, annoKW = {}, use_hyper = False,  **kwargs):
-        if not use_hyper: Channel_Dep_Methods, Channel_Dep_TagSets = {}, {}
+    def INIT(cls, CORPUSPath, corpusGroupIden, textType, 
+             Text2SentMethod, Sent2TokenMethod, TOKENLevel, anno = False, annoKW = {}, 
+             use_hyper = False, Channel_Dep_Methods = Channel_Dep_Methods, Channel_Dep_TagSets = Channel_Dep_TagSets, 
+              **kwargs):
+        
+        Channel_Dep_Methods = {} if not use_hyper else Channel_Dep_Methods
+        Channel_Dep_TagSets = {} if not use_hyper else Channel_Dep_TagSets
         
         ################################################################################################################
         corpus_name = CORPUSPath.split('/')[-2]
@@ -92,8 +93,11 @@ class BasicObject(object):
         for ch, tagSet in Channel_Dep_TagSets.items():
             LGU = getTagDict(tagSet, tagScheme = 'BIOES')
             DGU = dict(zip(LGU, range(len(LGU))))
-            cls.VOCAB[Data_Dir][ch] = (LGU, DGU)
-            cls.Channel_Hyper_Path[ch] =  os.path.join(File_Dir, ch + '.txt')
+            channel_name = ch + '-es'
+            cls.VOCAB[Data_Dir][channel_name] = (LGU, DGU)
+            
+            # don't need to change to pos-es
+            cls.Channel_Hyper_Path[ch] =  os.path.join(File_Dir, channel_name + '.txt')
             if os.path.isfile(cls.Channel_Hyper_Path[ch]):
                 os.remove(cls.Channel_Hyper_Path[ch])
 
@@ -131,6 +135,7 @@ class BasicObject(object):
         SENT['EndIDXTokens'] = []
         # even more file information will be included here.
         for ch, path in cls.Channel_Hyper_Path.items():
+            # change this to numpy 
             SENT[path] = []
         
         # token information
@@ -162,7 +167,7 @@ class BasicObject(object):
             for strText_SSET_O_A in GroupTexts:
                 # the following block deals with each text in a group
                 strText, SSETText, origTextName, annoTextName = strText_SSET_O_A
-                strSents = segText2Sents(strText, method = Text2SentMethod, useSep = useSep) 
+                strSents = segText2Sents(strText, method = Text2SentMethod) 
 
                 # skip the sents that are empty and the sents which doesn't have annotations.
                 if len(strSents) == 0 or (anno and len(SSETText) == 0): continue
@@ -173,7 +178,11 @@ class BasicObject(object):
                 # block 1: for token and other hyper fields.
                 for strSent in strSents:
                     # the following block deals with each strSent in a text.
-                    strTokens = segSent2Tokens(strSent, method = Sent2TokenMethod)
+                    # if strTags is not None, strTokens and strTags share the same length, 
+                    # and this should be assert inside segSent2Tokens
+                    # strTokens = segSent2Tokens(strSent, method = Sent2TokenMethod)
+                    strTokens, hyper_info = segSent2Tokens(strSent, Sent2TokenMethod, TOKENLevel, Channel_Dep_Methods)
+                    # deal with tokens
                     for token in strTokens:
                         # the following block deals with each token in a text.
                         if token not in oldDTU:
@@ -194,16 +203,15 @@ class BasicObject(object):
                         f.write(line_sentence)
                         bytelenSent = utf8len(line_sentence)
                     try:
-                        SENT[cls.Channel_Hyper_Path[ch]].append(SENT[cls.Channel_Hyper_Path[ch]][-1] + bytelenSent)
+                        SENT[cls.Channel_Hyper_Path['token']].append(SENT[cls.Channel_Hyper_Path['token']][-1] + bytelenSent)
                     except:
-                        SENT[cls.Channel_Hyper_Path[ch]].append(bytelenSent)
+                        SENT[cls.Channel_Hyper_Path['token']].append(bytelenSent)
 
+                    # if use word level, make the sure that the return grains are the same.
                     # this is for generating the hyper field information.
                     # before using the hyper field information, we must know their labels before.
-                    for ch, hyper_field_method in Channel_Dep_Methods.items():
-                        ch_grain_sent = hyper_field_method(strSent, tokenLevel = TOKENLevel, tagScheme = 'BIOES')
-                        ch_grain_sent = [i[0] for i in ch_grain_sent]
-                        ch_grain_sent = [cls.VOCAB[Data_Dir][ch][1].get(i) for i in ch_grain_sent]
+                    for ch, ch_grain_sent in hyper_info.items():
+                        ch_grain_sent = [str(cls.VOCAB[Data_Dir][channel_name][1].get(i)) for i in ch_grain_sent]
                         assert len(ch_grain_sent) == len(strTokens)
                         # or you can create a file, which is LineSentence type file. each line is a sentence.
                         with open(cls.Channel_Hyper_Path[ch], 'a') as f:
@@ -233,7 +241,7 @@ class BasicObject(object):
                               
                     for sentIdx, CITSent in enumerate(CITSents):
                         anno_tags = [CITToken[2] for CITToken in CITSent]
-                        anno_tags = [cls.VOCAB[Data_Dir]['annoE'][1].get(i) for i in anno_tags]
+                        anno_tags = [cls.VOCAB[Data_Dir]['annoE-es'][1].get(i) for i in anno_tags]
                         with open(cls.Channel_Hyper_Path['annoE'], 'a') as f:
                             line_sentence = ' '.join(anno_tags) + '\n'
                             f.write(line_sentence)
@@ -372,7 +380,6 @@ class BasicObject(object):
             pickle.dump(cls.idx2freq, handle, protocol=4)
         print('*'*40)
         
-
     @classmethod
     def INIT_FROM_PICKLE(cls, Data_Dir, max_vocab_token_num = None, min_token_freq = None):
         assert os.path.exists(Data_Dir) 
