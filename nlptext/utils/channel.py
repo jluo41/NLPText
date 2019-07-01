@@ -167,26 +167,6 @@ posTag = ['a', 'ad', 'ag', 'an', 'b', 'c', 'd', 'df', 'dg', 'e', 'eng',
           'tg', 'u', 'ud', 'ug', 'uj', 'ul', 
           'uv', 'uz', 'v', 'vd', 'vg', 'vi', 'vn', 'vq', 'x', 'y', 'yg', 'z', 'zg']
 
-
-def modify_wordBoundary_with_hyperBoundary(pos_sent, anno_sent):
-    # return the new word_boundary with BIO tagScheme.
-    pos_sent = [i.replace('-S', '-B').replace('-E', '-I') for i in pos_sent]
-    
-    for idx, tag in enumerate(anno_sent):
-        if ('-B' == anno_sent[idx][-2:]  or '-S' == anno_sent[idx][-2:]):
-            if pos_sent[idx][-2:] != '-B':
-                # pprint([anno_sent[idx], pos_sent[idx]])
-                pos_sent[idx] = pos_sent[idx].split('-')[0] + '-B'
-
-        if ('-E' == anno_sent[idx][-2:]  or '-S' == anno_sent[idx][-2:]) and idx + 1 < len(pos_sent):
-            if pos_sent[idx+1][-2:] != '-B':
-                # pprint([anno_sent[idx], pos_sent[idx], pos_sent[idx+1]])
-                # pprint(list(zip(anno_sent, pos_sent)))
-                pos_sent[idx+1] = pos_sent[idx+1].split('-')[0] + '-B'
-                
-    return pos_sent
-
-
 def POSGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
     '''
         Here only for Atom is Char Based
@@ -194,36 +174,33 @@ def POSGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
         sent: List of Token(String), with or without Start or End
         sent: [str]
     '''
-    # if useStartEnd:
-    #     sent = sent[1:-1]
-
-
     segs = list(posseg.cut(''.join(sent)))
-    
+    tokens = []
     GrainSent = []
 
-    for i in range(len(segs)):
-        pair  = segs[i]
-        leng  = len(pair.word)
-        label = pair.flag
-        labels= [label + '-I' ]*leng
-        labels[0] = label + '-B'
-        if 'E' in tagScheme and leng >= 2:
-            labels[-1] = label + '-E'
-        if 'S' in tagScheme and leng == 1:
-            labels[0] = label + '-S'
-        GrainSent.extend([[i] for i in labels])
-
     if tokenLevel == 'char':
-        return GrainSent
+        for i in range(len(segs)):
+            pair  = segs[i]
+            leng  = len(pair.word)
+            label = pair.flag
+            labels= [label + '-I' ]*leng
+            labels[0] = label + '-B'
+            if 'E' in tagScheme and leng >= 2:
+                labels[-1] = label + '-E'
+            if 'S' in tagScheme and leng == 1:
+                labels[0] = label + '-S'
+            GrainSent.extend(labels)
+            tokens.extend([i for i in pair.word])
+        return GrainSent, tokens
 
     elif tokenLevel == 'word':
         for i in range(len(segs)):
             pair  = segs[i]
             label = pair.flag
-            GrainSent.append([label])
+            GrainSent.append(label+ '-B')
+            tokens.append(pair.word )
             # print(pair.word)
-        return GrainSent
+        return GrainSent, tokens
 ##################################################################
 
 ################################################################################################

@@ -242,51 +242,63 @@ FolderTextsReaders = {
 
 
 ##################################################################################################TEXT-SENT
-def reCutText2Sent(text, useSep = False):
-    
-    
+def reChnCutText2Sent(text, useSep = False):
+    # first, eventually, the space will be used to seperate the tokens
+    # in this case, if there are spaces in the original text and is not the delimiter
+    # they will be removed away.
+
+    # the formats of the text
+    # 1. text is a Chinese string, in this case there are no spaces
+    #    '汉字表示的数学一词大约产生于中国宋元时期。'
+    #    in this case, if there is a space, regard it as an original seperator in the future.
+    #    the annoying case if the sentence together with numbers and English letters.
+    # 2. text is a Chinese string seperated by space
+    #    '汉字 表示 的 数 学 一 词 大约 产生 于 中国 宋元 时期 。'
+    # 3. tokens in the sentence contain hyper information, but still separated by space.
+    #    '汉字_nz 表示_v 的_u 数_n 学_n 一_m 词_n 大约_d 产生_v 于_p 中国_ns 宋元_t 时期_n 。_w'
+
+    # I didn't find good way to deal with the English. The common way to use is whole. 
+    # we will use whole line as a sentence for English file.
     ###################### Remove some weird chars #######################
     text = re.sub('\xa0', '', text)
-    
-    ############# The Issue of Spaces
-    ###################### Convert the Spaces between two English Letters to 'ⴷ' #################
-    # Take care of Spaces
-    text = re.sub(r'(?<=[A-Za-z])\s+(?=[|A-Za-z])', 'ⴷ',  text)
+
+    # keep the spaces between two English letters.
+    # text = re.sub(r'(?<=[A-Za-z])\s+(?=[|A-Za-z])', 'ⴷ',  text)
     
     ###################### Convert the S+ spaces to '〰' #################
-    text = re.sub(' {2}', '〰', text ).strip()
-    if useSep == ' ':
-        # if using space to sep the words
-        text = text.replace('\t','').replace('〰', ' ')
-    elif useSep == '\t':
-        # if using tab to sep the words, removing all spaces
-        text = text.replace(' ','').replace('〰', '')
-    else:
-        # if there is no sep char for Chinese, remove single space, and then convert space+ to single space
-        text = text.replace('\t','').replace(' ', '',).replace('〰', ' ')
-        
+    # text = re.sub(' {2}', '〰', text ).strip()
+    # if useSep == ' ':
+    #     # if using space to sep the words
+    #     text = text.replace('\t','').replace('〰', ' ')
+    # elif useSep == '\t':
+    #     # if using tab to sep the words, removing all spaces
+    #     text = text.replace(' ','').replace('〰', '')
+    # else:
+    #     # if there is no sep char for Chinese, remove single space, and then convert space+ to single space
+    #     text = text.replace('\t','').replace(' ', '',).replace('〰', ' ')
+
+    text = text.replace('\t','')# .replace(' ', '',).replace('〰', ' ')
     # convert the spaces between English letters to single spaces
-    text = text.replace('ⴷ', ' ')
+    # text = text.replace('ⴷ', ' ')
     
-    # Other Things
     text = re.sub('([。！;；])([^”])',  r"\1\n\2",text) 
     text = re.sub('(\.{6})([^”])',     r"\1\n\2",text) 
     text = re.sub('(\…{2})([^”])',     r"\1\n\2",text)
     
     # The \n within " " is not considered
-    text = '"'.join( [ x if i % 2 == 0 else x.replace('\n', '') 
-                         for i, x in enumerate(text.split('"'))] )
+    text = '"'.join( [ x if i % 2 == 0 else x.replace('\n', '') for i, x in enumerate(text.split('"'))] )
+    
     text = re.sub( '\n+', '\n', text ).strip() # replace '\n+' to '\n'
     text = text.replace('\\n', '\n')
     text = text.split("\n")
     text = [sent.strip() for sent in text]
     # text = [sent.replace(' ', '').replace('\\n', '') for sent in text]
-    return [sent for sent in text if len(sent)>=2]
 
-def lineCutText2Sent(fullfilepath):
-    with open(fullfilepath, 'r', encoding = 'utf-8') as f:
-        for sent in f:
-            yield strQ2B(sent).replace('\n', '')
+    return text # [sent for sent in text if len(sent)>=2]
+
+def lineCutText2Sent(text):
+    return text.split('\n')
+
 
 def tokenText2Sent(text):
     sents = []
@@ -298,33 +310,136 @@ def tokenText2Sent(text):
     sents.append(text[idx:])
     return sents
 
+
+def preprocess_text(text):
+    # for example: 
+    # 1 removing the no-chinese character
+    # 2 removing the empty parenthesis
+    # 3 replacing the weird punctunations.
+    return text
+
 def segText2Sents(text, method = 'whole', **kwargs):
-    # TODO: we need to consider the situation where text is a list instead of a string.
-    if method == 'token':
-        return tokenText2Sent(text)
+    # the formats of the text
+    # 1. text is a Chinese string, in this case there are no spaces
+    #    '汉字表示的数学一词大约产生于中国宋元时期。'
+    #    in this case, if there is a space, regard it as an original seperator in the future.
+    #    the annoying case if the sentence together with numbers and English letters.
+    #    to deal with the spaces in this format, we simply keep them.
+    # 2. text is a Chinese string seperated by space
+    #    '汉字 表示 的 数 学 一 词 大约 产生 于 中国 宋元 时期 。'
+    # 3. tokens in the sentence contain hyper information, but still separated by space.
+    #    '汉字_nz 表示_v 的_u 数_n 学_n 一_m 词_n 大约_d 产生_v 于_p 中国_ns 宋元_t 时期_n 。_w'
+    # 2. and 3. are basically the same. but we wouldn't consider it.
+
+    # for English
+    # 1. the text is naturally seperated by the spaces. we seg the text to sents by its only '\n' only.
+
+    # TODO: here should be some checks for texts.
+
     if os.path.isfile(text):
-        if method == 'line':
-            text = lineCutText2Sent(text)
-            return text
-        else:
-            text = fileReader(text)
+        text = fileReader(text)
+            
+    # preprocessing the text
+    text = preprocess_text(text)
+
     if method == 'whole':
-        return [text.replace('\n', '')]
+        # this is commonly used for wikipedia data
+        # for English corpus, we use this only.
+        sents = [text]
+
     elif method == 're':
         # re still need more method to consider the final results.
-        return reCutText2Sent(text, **kwargs)
+        sents = reChnCutText2Sent(text, **kwargs)
+
+    elif method == 'line':
+        sents = lineCutText2Sent(text)
+
+    elif method == 'token':
+        # what's the meaning?
+        sents = tokenText2Sent(text)
+
     else:
-        return method(text, **kwargs)
-##################################################################################################TEXT-SENT
+        sents = method(text, **kwargs)
+
+    # postprocessing
+    # after this, there is no '\n' in sents
+    sents = [sent.replace('\n', '') for sent in sents]
+
+    return sents
+
 
 ##################################################################################################SENT-TOKEN
-def segSent2Tokens(sent, method = 'iter'):
-    if method == 'iter':
-        return [i.replace(' ', '') for i in sent]
-    elif method[:4] == 'sep-':
-        sep = method.replace('sep-', '')
-        return [i.replace(' ', '') for i in sent.split(sep) if i != '']
-##################################################################################################SENT-TOKEN
+
+def clean_token(token):
+    # token contains no spaces.
+    token = token.replace(' ', '').replace('\n', '').replace('\t', '')
+
+    # punctuation must be seperated away from token.
+    # if token contains special marks, seperate this token to two or more token.
+
+    # last check, token should not be '', if so, pass it.
+    # remove some special tokens.
+    return [token]
+
+
+def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_Methods = {}):
+
+    hyper_info = {}
+
+    # seg_method is: 1 iter; 2 ' ' or '\t'; 3 'pos' or other channel that are in Channel_Dep_Methods
+    if seg_method == 'iter' and tokenLevel == 'char':
+        # sent can be
+        # 1. '产生于中国宋元时期。'           --->   '产 生 于 中 国 宋 元 时 期 。' 
+        # 2. '产生 于 中国 宋元 时期 。'      --->   '产 生 于 中 国 宋 元 时 期 。' 
+        # 3. '产 生 于 中 国 宋 元 时 期 。'  --->   '产 生 于 中 国 宋 元 时 期 。' 
+        strTokens = [i for i in sent if i != ' ']
+    
+    elif seg_method in [' ', '\t']:
+        # sent can be
+        # 1. '产生 于 中国 宋元 时期 。'      --->   '产生 于 中国 宋元 时期 。' 
+        # 2. '产 生 于 中 国 宋 元 时 期 。'  --->   '产 生 于 中 国 宋 元 时 期 。'
+        # both word and char level is OK.
+        strTokens =  [i.replace(' ', '') for i in sent.split(seg_method) if i != ' ']
+
+        # check and clean the token
+        final_tokens = []
+        for idx, token in enumerate(strTokens):
+            new_tokens = clean_token(token)
+            final_tokens.extend(new_tokens)
+        strTokens = final_tokens
+
+    elif seg_method in Channel_Dep_Methods:
+        ch_grain_sent, strTokens = Channel_Dep_Methods[seg_method](sent, tokenLevel = tokenLevel, tagScheme = 'BIOES')
+        # check and clean the token
+        final_tokens = []
+        new_grain_sent = []
+        for idx, token in enumerate(strTokens):
+            new_tokens = clean_token(token)
+            final_tokens.extend(new_tokens)
+            if len(new_tokens) == 1:
+                new_grain_sent.append(ch_grain_sent[idx])
+            else:
+                new_grain_sent.extend([ch_grain_sent[idx]] * len(new_tokens))
+
+        strTokens = final_tokens
+        ch_grain_sent = new_grain_sent
+        hyper_info[seg_method] = ch_grain_sent
+
+    else:
+        raise('No good segmentaion method...')
+
+    # in general, we only use it for Chinese Char, and won't for Chinese Word
+    # actually, we can also use it for English Word. but English char is too verbose.
+    for ch, hyper_method in Channel_Dep_Methods.items():
+        if ch == seg_method:
+            continue
+        # these hyper fields are all fields with larger granularity, and changing will be taken care inside the method.
+        ch_grain_sent, _ = hyper_method(strTokens, tokenLevel = tokenLevel, tagScheme = 'BIOES') 
+        # this assert should be inside the hyper_field_method
+        # assert len(ch_grain_sent) == len(final_tokens)
+        hyper_info[ch] = ch_grain_sent
+
+    return strTokens, hyper_info
 
 
 ##################################################################################################TEXT-ANNO
