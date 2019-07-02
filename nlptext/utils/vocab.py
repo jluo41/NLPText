@@ -52,12 +52,21 @@ def buildTokens(tokenList):
 
 
 ##################################################################################################LTU_LGU-LT
-def get_GU_or_LKP(TokenUnique, channel= 'char', Max_Ngram = 1, end_grain = False, specialTokens = specialTokens):
+def get_GU_or_LKP(TokenVocab, channel= 'char', Max_Ngram = 1, end_grain = False, 
+                  max_vocab_token_num = None, min_token_freq = 1,
+                  max_vocab_grain_num = None, min_grain_freq = 1):
+
     # ListGrainUnique = []
-    LTU, DTU = TokenUnique
+    LTU, DTU = TokenVocab
+
+    max_vocab_token_num = None, min_token_freq = 1
+
+    LTU = LTU[:max_vocab_token_num]
+
     # num_specialtokens = len(specialTokens)
     # assert LTU[:num_specialtokens] == specialTokens
     DGU = {}
+    grainidx2freq = []
     new_grains = []
     # ListGrainUnique = ListGrainUnique + new_grains
     # LKP = [[idx] for idx in range(num_specialtokens)]
@@ -65,14 +74,21 @@ def get_GU_or_LKP(TokenUnique, channel= 'char', Max_Ngram = 1, end_grain = False
     print('For channel: |', channel, '| build GrainUnique and LookUp')
     for idx, token in enumerate(LTU):
         ChN = getChannelGrain4Token(token, channel, Max_Ngram= Max_Ngram, end_grain = end_grain)
-        new_grains = [i for i in set(ChN) if i not in DGU]
-        # make sure to keep the order
-        new_grains.sort() 
-        for gr in new_grains:
-            DGU[gr] = len(DGU)
+        grain2number = count(ChN) 
+        for gr in grain2number:
+            if gr in DGU:
+                grainidx2freq[DGU[gr]] = grainidx2freq[DGU[gr]] + grain2number[gr]
+            else:
+                DGU[gr] = len(DGU)
+                LGU.append(gr)
+                grainidx2freq.append(grain2number[gr])
+
         LKP.append([DGU[gr] for gr in ChN])
         if idx % 100000 == 0:
             print('\t\tFor Channel:', channel, '\t', idx, datetime.now())
+
+    # remove some high and low frequency grains.
+    # notice that the grain freq is based on vocab instead of corpus.
             
     LGU = list(DGU.keys())
     # assert ListGrainUnique[:num_specialtokens] == specialTokens

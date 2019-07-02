@@ -39,9 +39,11 @@ def geneTextFilePaths(corpusPath, orig_iden = '.txt', anno_iden = None):
             
         FolderDict[foldername] = OrigFileList, AnnoFileList
     return FolderDict
-##################################################################################################CORPUS-FOLDER
+
+
 
 ##################################################################################################FOLDER-TEXT
+
 def textFileReader(folderPath, fileNames, anno = False, sep = '\t', notZeroIndex = 1,notRightOpen=0, **kwargs):
     # folderPath is textFile path, one text only
     # only here need to take care of annoLevel: text or sent.
@@ -238,10 +240,11 @@ FolderTextsReaders = {
     'json' : textJsonReader,
     'word': textWordReader
 }
-##################################################################################################FOLDER-TEXT
+
 
 
 ##################################################################################################TEXT-SENT
+
 def reChnCutText2Sent(text, useSep = False):
     # first, eventually, the space will be used to seperate the tokens
     # in this case, if there are spaces in the original text and is not the delimiter
@@ -301,6 +304,7 @@ def lineCutText2Sent(text):
 
 
 def tokenText2Sent(text):
+    # how to understand this?
     sents = []
     idx = 0
     for i in range(len(text)):
@@ -309,7 +313,6 @@ def tokenText2Sent(text):
             idx =  i + 1
     sents.append(text[idx:])
     return sents
-
 
 def preprocess_text(text):
     # for example: 
