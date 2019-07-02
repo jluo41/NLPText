@@ -1,20 +1,43 @@
 from pprint import pprint
 from nlptext.base import BasicObject
 
-# ########### Wiki All ###########
+# # ########### Wiki All ###########
+# CORPUSPath = 'corpus/WikiTotal/'
+# GroupIden = '.txt'
+# TextType   = 'line'
+# Text2SentMethod  = 're'
+# Sent2TokenMethod = 'sep- '
+# TOKENLevel = 'word'
+# anno = False
+# annoKW = {}
+
+
+# BasicObject.INIT(CORPUSPath, GroupIden, TextType,
+#                  Text2SentMethod, Sent2TokenMethod, TOKENLevel,
+#                  anno, annoKW)
+
+
+
+from pprint import pprint
+from nlptext.base import BasicObject
+
+########### Wiki ###########
 CORPUSPath = 'corpus/WikiTotal/'
-GroupIden = '.txt'
-TextType   = 'line'
-Text2SentMethod  = 're'
-Sent2TokenMethod = 'sep- '
-TOKENLevel = 'word'
+corpusFileIden = '.txt'
+textType   = 'line'
+Text2SentMethod  = 'whole'
+# sentence to tokens
+Sent2TokenMethod = 'pos'
+TOKENLevel = 'char'
+use_hyper = True
+
 anno = False
 annoKW = {}
 
+BasicObject.INIT(CORPUSPath, corpusFileIden, textType, 
+                 Text2SentMethod, Sent2TokenMethod, TOKENLevel, 
+                 anno, annoKW, use_hyper = use_hyper)
 
-BasicObject.INIT(CORPUSPath, GroupIden, TextType,
-                 Text2SentMethod, Sent2TokenMethod, TOKENLevel,
-                 anno, annoKW)
 
 
 # BOB = 'data/WikiTotal/word/Token1000004/Pyramid'
