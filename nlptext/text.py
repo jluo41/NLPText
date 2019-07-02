@@ -37,6 +37,10 @@ class Text(BasicObject):
             # num_lines = e - s 
             return read_file_chunk_string(self.Channel_Hyper_Path['token'], start_position, end_position)
 
+    def get_stored_hyperinfo(self, channel):
+        start_position, end_position = self.start_end_position(channel)
+        return read_file_chunk_string(self.Channel_Hyper_Path[channel], start_position, end_position)
+
     def start_end_position(self, channel):
         startsentIdx, endsentIdx = self.IdxSentStartEnd
         start_position = self.SENT[self.Channel_Hyper_Path[channel]][startsentIdx-1] if startsentIdx != 0 else 0
