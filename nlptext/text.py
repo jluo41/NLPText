@@ -1,8 +1,6 @@
 
-# update 2018.07.14
-
 ########################## text.py #######################
-
+import re
 from bisect import bisect
 
 from .base import BasicObject
@@ -37,9 +35,22 @@ class Text(BasicObject):
             # num_lines = e - s 
             return read_file_chunk_string(self.Channel_Hyper_Path['token'], start_position, end_position)
 
-    def get_stored_hyperinfo(self, channel):
+    def get_stored_hyper(self, channel):
         start_position, end_position = self.start_end_position(channel)
         return read_file_chunk_string(self.Channel_Hyper_Path[channel], start_position, end_position)
+
+    def get_stored_hypertagscheme(self, channel, tagScheme):
+        # here channel should exclude token
+        grain_idx = re.split(' |\n', self.get_stored_hyper(channel))
+        bioes2tag = self.getTRANS(channel, tagScheme)
+        # GV = self.getGrainVocab(channel, tagScheme)
+        # shall we check its insanity?
+        return [bioes2tag[vocidx] for vocidx in grain_idx]
+
+    def get_stored_hyperstring(self, channel, tagScheme):
+        vocidx2grain = self.getGrainVocab(channel, tagScheme = tagScheme)[0]
+        grain_idx = self.get_stored_hypertagscheme(channel, tagScheme)
+        return [vocidx2grain[vocidx] for vocidx in grain_idx]
 
     def start_end_position(self, channel):
         startsentIdx, endsentIdx = self.IdxSentStartEnd
@@ -103,7 +114,6 @@ class Text(BasicObject):
             length = e - s
         return length
     
-
     def __repr__(self):
         ctx =  self.name + " " + str(self.Idx)  if type(self.Idx) == int else 'New'
         return "<txt " + ctx + ">"

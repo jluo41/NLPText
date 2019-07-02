@@ -8,6 +8,8 @@ from .token import Token
 from .utils.channel import getChannelGrain4Sent, getChannelName
 from .utils.pyramid import segSent2Tokens, get_line_with_position
 from .utils.infrastructure import START, END, START_ID, END_ID, UNK_ID
+import re 
+
 
 START_TK = Token(token = START)
 END_TK   = Token(token = END)
@@ -32,16 +34,27 @@ class Sentence(BasicObject):
             elif type(self._sentence) == list:
                 return ''.join(self._sentence)
         else:
-            start_position, _ = self.start_end_position('token')
-            return get_line_with_position(self.Channel_Hyper_Path['token'], start_position)
+            return self.get_stored_hyper('token')
 
-
-    def get_stored_hyperinfo(self, channel):
+    # get_stored methods is applicable for pyramid sentence
+    def get_stored_hyper(self, channel):
         start_position, _ = self.start_end_position(channel)
         return get_line_with_position(self.Channel_Hyper_Path[channel], start_position)
 
+    def get_stored_hypertagscheme(self, channel, tagScheme):
+        # here channel should exclude token
+        grain_idx = re.split(' |\n', self.get_stored_hyper(channel))
+        bioes2tag = self.getTRANS(channel, tagScheme)
+        # GV = self.getGrainVocab(channel, tagScheme)
+        # shall we check its insanity?
+        return [bioes2tag[vocidx] for vocidx in grain_idx]
 
-    def getChannelGrain(self, channel,  Max_Ngram = 1, tagScheme = 'BIO',  useStartEnd = False, end_grain = False):
+    def get_stored_hyperstring(self, channel, tagScheme):
+        vocidx2grain = self.getGrainVocab(channel, tagScheme = tagScheme)[0]
+        grain_idx = self.get_stored_hypertagscheme(channel, tagScheme)
+        return [vocidx2grain[vocidx] for vocidx in grain_idx]
+
+    def get_grain_str(self, channel,  Max_Ngram = 1, tagScheme = 'BIO',  useStartEnd = False, end_grain = False):
         channelToken = 'ANNOTokenIndex' if 'anno' in  channel else channel + 'TokenIndex'
         
         if channel == 'token':
@@ -63,7 +76,7 @@ class Sentence(BasicObject):
         else:
             return channelGrain
 
-    def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, channel_name = None, 
+    def get_grain_idx(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, channel_name = None, 
                        useStartEnd = False, 
                        TokenNum_Dir = None, # from TokenNum_Dir, we get TU, GU, and LKP
                        TU = None, GU = None, LKP = None, dontUseLookUp = False):

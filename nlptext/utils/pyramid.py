@@ -40,8 +40,6 @@ def geneTextFilePaths(corpusPath, orig_iden = '.txt', anno_iden = None):
         FolderDict[foldername] = OrigFileList, AnnoFileList
     return FolderDict
 
-
-
 ##################################################################################################FOLDER-TEXT
 
 def textFileReader(folderPath, fileNames, anno = False, sep = '\t', notZeroIndex = 1,notRightOpen=0, **kwargs):

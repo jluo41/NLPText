@@ -302,12 +302,10 @@ def getGrainNgrams(subword_infos, n):
     l = ['-'.join(i) for i in l]
     return l
 
-def grainToken(token, grainTokenFunction, Ngram = 1,Max_Ngram = None, end_grain = True):
+def grainToken(token, grainTokenFunction, Ngram = None, Min_Ngram = 1, Max_Ngram = 1, end_grain = True):
     infos =  grainTokenFunction(token, end_grain = end_grain) 
-    if not Max_Ngram:
-        return getGrainNgrams(infos, Ngram)
-    else:
-        return sum([getGrainNgrams(infos, idx+1) for idx in range(Max_Ngram)], [])
+    if Ngram: Min_Ngram, Max_Ngram = Ngram, Ngram + 1
+    return sum([getGrainNgrams(infos, idx+1) for idx in range(Min_Ngram, Max_Ngram + 1)], [])
 
 
 ###############################################################################################################
@@ -333,23 +331,60 @@ def getChannelGrain4Sent(sent, channel, Ngram = 1, Max_Ngram = None, tokenLevel 
 
 
 ###############################################################################################################
-def getChannelName(channel, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO', style = 'normal', channel_name = None, channel_name_abbr = None, **kwargs):
-
+def getChannelName(channel, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO', min_grain_freq = 1,
+                   style = 'normal', channel_name = None, channel_name_abbr = None, **kwargs):
+    # hyper: channel + '-bio'
+    # sub  : channel + '-n1t5' + 'e' or '' + 'f5'
     if style == 'normal':
-        MN = str(Max_Ngram) if Max_Ngram > 1 else ''
-        e  = 'e'            if end_grain else ''
-        tS = '-' + tagScheme.replace('BIO', '').lower() if tagScheme != 'BIO' else ''
-        return channel + MN + e + tS
+        if channel == 'token':
+            f  = '-f' + str(min_grain_freq)
+            return channel + f 
+        elif channel in CONTEXT_IND_CHANNELS:
+            MN = '-n' + str(Min_Ngram) + 't' + str(Max_Ngram)
+            e  = 'e' if end_grain else ''
+            f  = '-f' + str(min_grain_freq)
+            return channel + MN + e + tS 
+        else:
+            tS = '-' + tagScheme.lower() 
+            return channel + f 
 
     elif style == 'abbr':
-        channel = CHANNEL_ABBR[channel] # if abbr else channel
-        MN = str(Max_Ngram) if Max_Ngram > 1 else ''
-        e  = 'e'            if end_grain else ''
-        tS = '-' + tagScheme.replace('BIO', '').lower() if tagScheme != 'BIO' else ''
-        return channel + MN + e + tS
+        channel_abbr = CHANNEL_ABBR[channel] 
+        if channel == 'token':
+            f  = '-f' + str(min_grain_freq)
+            return channel_abbr + f 
+        elif channel in CONTEXT_IND_CHANNELS:
+            MN = '-n' + str(Min_Ngram) + 't' + str(Max_Ngram)
+            e  = 'e' if end_grain else ''
+            f  = '-f' + str(min_grain_freq)
+            return channel_abbr + MN + e + tS 
+        else:
+            tS = '-' + tagScheme.lower() 
+            return channel_abbr + f 
 
     elif channel_name and style == 'extract':
         assert channel in channel_name
+        if channel == 'token':
+            f  = '-f' + str(min_grain_freq)
+            channel, min_grain_freq = channel_name.split('-f')
+            return channel + f 
+
+        elif channel in CONTEXT_IND_CHANNELS:
+            MN = '-n' + str(Min_Ngram) + 't' + str(Max_Ngram)
+            e  = 'e' if end_grain else ''
+            f  = '-f' + str(min_grain_freq)
+            return channel + MN + e + tS 
+        else:
+            tS = '-' + tagScheme.lower() 
+            return channel + f 
+
+
+        if '-f' in channel_name:
+            channel_name, min_grain_freq = channel_name.split('-f')
+            min_grain_freq = str(min_grain_freq)
+        else:
+            min_grain_freq = 1
+
         MN_e_tS = channel_name[len(channel):]
         if len(MN_e_tS) == 0:
             return channel, Max_Ngram, end_grain, tagScheme
@@ -372,10 +407,18 @@ def getChannelName(channel, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO'
             tagScheme = 'BIO' + ts.upper()[1:]
         else:
             tagScheme = 'BIO'
-        return channel, Max_Ngram, end_grain, tagScheme
+        return channel, Max_Ngram, end_grain, tagScheme, min_grain_freq
         
     elif channel_name_abbr and style == 'extract':
         channel_abbr = CHANNEL_ABBR[channel]
+
+        if '-f' in channel_name_abbr:
+            channel_name_abbr, min_grain_freq = channel_name_abbr.split('-f')
+            min_grain_freq = str(min_grain_freq)
+        else:
+            min_grain_freq = 1
+
+
         MN_e_tS = channel_name_abbr[len(channel_abbr): ]
         if len(MN_e_tS) == 0:
             return channel, Max_Ngram, end_grain, tagScheme
@@ -399,7 +442,7 @@ def getChannelName(channel, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO'
         else:
             tagScheme = 'BIO'
         
-        return channel, Max_Ngram, end_grain, tagScheme
+        return channel, Max_Ngram, end_grain, tagScheme, min_grain_freq
 
     else:
         print('Error in getChannelName')
