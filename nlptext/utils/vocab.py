@@ -52,33 +52,18 @@ def buildTokens(tokenList):
 ##################################################################################################TOKEN_LTU
 
 
-def get_num_freq(idx2freq, max_vocab_token_num = None, min_token_freq = 1):
-    if min_token_freq:
-        max_vocab_token_num = len(idx2freq[idx2freq > min_token_freq])
-        print('coverage rate is:', max_vocab_token_num / len(idx2freq))
-        return max_vocab_token_num,  min_token_freq
-    elif max_vocab_token_num:
-        if max_vocab_token_num > len(idx2freq):
-            return len(idx2freq), 1
-        else:
-            min_token_freq = max_vocab_token_num[max_vocab_token_num]
-            return max_vocab_token_num, min_token_freq
-    else:
-        raise('Error in max_vocab_token_num and min_token_freq')
-
-
-
+def get_num_freq(idx2freq, min_token_freq = 1):
+    max_vocab_token_num = len(idx2freq[idx2freq > min_token_freq])
+    return max_vocab_token_num
 
 ##################################################################################################LTU_LGU-LT
-
-def get_GU_or_LKP(TokenVocab, tkidx2freq, channel= 'char', Max_Ngram = 1, end_grain = False, 
-                  max_vocab_token_num = None, min_token_freq = 1,
-                  max_vocab_grain_num = None, min_grain_freq = 1):
+def get_GU_or_LKP(TokenVocab, tkidx2freq, channel= 'char',
+                  Min_Ngram = 1, Max_Ngram = 1, end_grain = False, 
+                  min_grain_freq = 1, min_token_freq = 1 ):
 
     # ListGrainUnique = []
     LTU, DTU = TokenVocab
-    max_vocab_token_num, min_token_freq = get_num_freq(tkidx2freq, max_vocab_token_num = max_vocab_token_num, 
-                                                       min_token_freq = min_token_freq)
+    max_vocab_token_num = get_num_freq(tkidx2freq, min_token_freq = min_token_freq)
     LTU = LTU[:max_vocab_token_num]
     
     # the containers to store our results
@@ -110,8 +95,10 @@ def get_GU_or_LKP(TokenVocab, tkidx2freq, channel= 'char', Max_Ngram = 1, end_gr
     assert len(LKP) == len(LTU)
     
     # sort the LGU, DGU and renew LKP
-    del oldDGU 
+    oldidx2freq = np.array(oldidx2freq)
+    max_grain_num = len(oldidx2freq[oldidx2freq >= min_grain_freq])
     
+    del oldDGU 
     grainidx2freq = np.sort(oldidx2freq)[::-1]
     newidx2oldidx = np.argsort(oldidx2freq)[::-1]
     del oldidx2freq
@@ -119,12 +106,21 @@ def get_GU_or_LKP(TokenVocab, tkidx2freq, channel= 'char', Max_Ngram = 1, end_gr
     oldidx2newidx = np.zeros(len(newidx2oldidx), dtype= int) 
     for new_idx, old_idx in enumerate(newidx2oldidx):
         oldidx2newidx[old_idx] = new_idx
+    
     for tkidx, grainlist in enumerate(LKP):
-        LKP[tkidx] = [oldidx2newidx[oldix] for oldix in grainlist]
+        new_grainlist = []
+        for oldidx in grainlist:
+            newidx = oldidx2newidx[oldidx]
+            # throw away the low frequency grains
+            if grainidx2freq[newidx] < min_grain_freq:
+                continue
+            new_grainlist.append(newidx)
+        LKP[tkidx] = new_grainlist 
     del oldidx2newidx
 
     LGU = []
-    for new_idx in range(len(oldLGU)):
+    for new_idx in range(max_grain_num):
+        # to filter some grains
         LGU.append(oldLGU[newidx2oldidx[new_idx]])
     del oldLGU
     del newidx2oldidx
@@ -133,4 +129,6 @@ def get_GU_or_LKP(TokenVocab, tkidx2freq, channel= 'char', Max_Ngram = 1, end_gr
     for new_idx, token in enumerate(LGU):
         DGU[token] = new_idx
         
+    grainidx2freq = grainidx2freq[:max_grain_num]
+    
     return (LGU, DGU), LKP, grainidx2freq

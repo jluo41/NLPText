@@ -331,13 +331,29 @@ class BasicObject(object):
         
         cls.idx2freq  = idx2freq
         
-        cls.idx2token = LTU
-        cls.token2idx = DTU
-        cls.TokenVocab = (cls.idx2token, cls.token2idx)
-        cls.VOCAB[Path_Key]['token'] = cls.TokenVocab
-
+        # cls.idx2token = LTU
+        # cls.token2idx = DTU
+        cls.TokenVocab = (LTU, DTU)
+        # cls.VOCAB[Path_Key]['token'] = cls.TokenVocab
+        orig_vocab_length = len(cls.TokenVocab[0])
+        cls.original_vocab_token_num = orig_vocab_length
+        cls.current_vocab_token_num  = orig_vocab_length
         cls.OBJECT_TO_PICKLE()
-        
+
+        # this will be a new cls.TokenVocab and cls.idx2freq
+        # cls.VOCAB[Path_Key]['token'] is also changed.
+        max_vocab_token_num, min_token_freq = get_num_freq(cls.idx2freq, 
+            max_vocab_token_num = max_vocab_token_num, min_token_freq = min_token_freq)
+        cls.min_token_freq = min_token_freq
+        cls.max_vocab_token_num = max_vocab_token_num
+        cls._buildGVforToken(max_vocab_token_num, min_token_freq)
+
+        folder = 'F' + str(min_token_freq) 
+        Path_Key = os.path.join(cls.Data_Dir, 'Vocab', folder)
+        if not os.path.exists(Path_Key):
+            os.makedirs(Path_Key)
+
+
     @classmethod
     def OBJECT_TO_PICKLE(cls):
         Data_Dir = cls.Data_Dir
@@ -363,18 +379,32 @@ class BasicObject(object):
         Path_Key = os.path.join(Data_Dir, 'Vocab')
         if not os.path.exists(Path_Key):
             os.makedirs(Path_Key)
+
         for k, v in cls.VOCAB[Path_Key].items():
+            
             pickle_path = os.path.join(Path_Key, k + '.voc')
             with open(pickle_path, 'wb') as handle:
                 # v is (LGU, DGU)
                 pickle.dump(v, handle, protocol=4)
                 print(k + '\tis Dumped into file:', pickle_path)
                 print(k + '\tthe length of it is   :', len(v[0]))
+            
             channel_name_path = os.path.join(Path_Key, k + '.tsv')
             writeGrainList2File(channel_name_path, v[0])
             print('\t\tWrite to:', channel_name_path)
 
         ################################################################################ 
+        pickle_path = os.path.join(Path_Key, 'token.voc')
+        with open(pickle_path, 'wb') as handle:
+            # v is (LGU, DGU)
+            pickle.dump(cls.TokenVocab, handle, protocol=4)
+            print(k + '\tis Dumped into file:', pickle_path)
+            print(k + '\tthe length of it is   :', len(cls.TokenVocab[0]))
+        
+        channel_name_path = os.path.join(Path_Key, 'token.tsv')
+        writeGrainList2File(channel_name_path, cls.TokenVocab[0])
+        print('\t\tWrite to:', channel_name_path)
+
         pickle_path = os.path.join(Path_Key, 'token.freq')
         with open(pickle_path, 'wb') as handle:
             pickle.dump(cls.idx2freq, handle, protocol=4)
@@ -396,12 +426,12 @@ class BasicObject(object):
                 print(layer_name + '\tthe length of it is   :', v['length'])
         print('*'*40, '\n')
 
-
-        cls._load_orignal_tokenvacab_from_disk(cls, max_vocab_token_num, min_token_freq)
+        # idx2freq and TokenVocab
+        cls._load_tokenvocab_from_disk()
+        max_vocab_token_num, min_token_freq = get_num_freq(cls.idx2freq, 
+            max_vocab_token_num = max_vocab_token_num, min_token_freq = min_token_freq)
+        cls._buildGVforToken(max_vocab_token_num, min_token_freq)
         
-        
-        
-
     @classmethod
     def _load_tokenvocab_from_disk(cls):
         ################################################################################
@@ -416,11 +446,31 @@ class BasicObject(object):
         pickle_path = os.path.join(Path_Key, 'token.voc')
         with open(pickle_path, 'rb') as handle:
             cls.TokenVocab = pickle.load(handle)
-            cls.VOCAB[cls.Data_Dir][channel_name] = cls.TokenVocab
+            # cls.VOCAB[Path_Key][channel_name] = cls.TokenVocab
 
         orig_vocab_length = len(cls.TokenVocab[0])
         cls.original_vocab_token_num = orig_vocab_length
         cls.current_vocab_token_num  = orig_vocab_length
+
+    @classmethod
+    def _buildGVforToken(cls, max_vocab_token_num = None, min_token_freq = 1):
+        # both two inputs are valid
+        if min_token_freq == cls.min_token_freq:
+            return cls.TokenVocab 
+
+        if min_token_freq < cls.min_token_freq:
+            # reset all information from disk
+            cls._load_tokenvocab_from_disk()
+
+        cls.idx2freq = cls.idx2freq[:max_vocab_token_num]
+        LTU, DTU = cls.TokenVocab
+        LTU = LTU[:max_vocab_token_num]
+        DTU = {}
+        for newidx in range():
+            DTU[LTU[newidx]] = newidx
+        cls.TokenVocab = LTU, DTU
+        cls.current_vocab_token_num = max_vocab_token_num
+        return cls.TokenVocab 
 
     @classmethod
     def _getGVfromVocab(cls, Path_Key, channel_name):
@@ -472,44 +522,19 @@ class BasicObject(object):
         return GrainVocab
 
 
-    
-
-    @classmethod
-    def _buildGVforToken(cls, max_vocab_token_num = None, min_token_freq = 1):
-
-        max_vocab_token_num, min_token_freq = get_num_freq(cls.idx2freq, 
-            max_vocab_token_num = max_vocab_token_num, min_token_freq = min_token_freq)
-
-        if max_vocab_token_num == cls.current_vocab_token_num:
-            return cls.TokenVocab 
-
-        if max_vocab_token_num > cls.current_vocab_token_num:
-            # reset all information from disk
-            cls._load_tokenvocab_from_disk()
-
-        cls.idx2freq = cls.idx2freq[:max_vocab_token_num]
-        LTU, DTU = cls.TokenVocab
-        LTU = LTU[:max_vocab_token_num]
-        DTU = {}
-        for newidx in range():
-            DTU[LTU[newidx]] = newidx
-        cls.TokenVocab = LTU, DTU
-        cls.current_vocab_token_num = max_vocab_token_num
-        return cls.TokenVocab 
-
     @classmethod
     def _buildGVforSub(cls, Path_Key, channel, channel_name,
-                       max_vocab_token_num = None, min_token_freq = 1,
-                       max_vocab_grain_num = None, min_grain_freq = 1):
+                       min_token_freq = 1, min_grain_freq = 1):
 
         print('\t\tBuild Grain Uniqe and LookUp Table for channel:', channel_name)
 
         channel, Max_Ngram, end_grain, tagScheme = getChannelName(channel, channel_name = channel_name, style = 'extract')
         
         # build GV and LKP
-        GrainVocab, LKP, grainidx2freq = get_GU_or_LKP(cls.TokenVocab, tkidx2freq = cls.idx2freq, channel = channel, Max_Ngram = Max_Ngram, end_grain = end_grain,
-                                                       max_vocab_token_num = max_vocab_token_num, min_token_freq = min_token_freq,
-                                                       max_vocab_grain_num = max_vocab_grain_num, min_grain_freq = min_grain_freq)
+        GrainVocab, LKP, grainidx2freq = get_GU_or_LKP(cls.TokenVocab, tkidx2freq = cls.idx2freq, channel = channel, 
+                                                       Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, 
+                                                       end_grain = end_grain, min_grain_freq = min_grain_freq, 
+                                                       min_token_freq = min_token_freq)
         
         # save to VOCAB
         cls.VOCAB[Path_Key] = cls.VOCAB[Path_Key] if Path_Key in cls.VOCAB else {}
@@ -547,31 +572,31 @@ class BasicObject(object):
         return GrainVocab
 
     @classmethod
-    def getGrainVocab(cls, channel, Max_Ngram=1, end_grain = False, tagScheme = 'BIO', 
-                      max_vocab_token_num = None, min_token_freq = 1, 
-                      channel_name = None,
-                      max_vocab_grain_num = None, min_grain_freq = 1,
-                      Data_Dir = None,  **kwargs):
+    def getGrainVocab(cls, channel, Max_Ngram=1, end_grain = False, tagScheme = 'BIO', min_grain_freq = 1, channel_name = None,
+                      min_token_freq = None, Data_Dir = None,  **kwargs):
+
+        # for token, only return itself token vocab
+        if channel == 'token':
+            if min_grain_freq == cls.min_grain_freq
+                return cls.TokenVocab
+            else:
+                raise('Error in getting token vocab, only one method is implemented now.')
 
         # find the Data_Dir
         Data_Dir = cls.Data_Dir if not Data_Dir else Data_Dir
 
         # build the path key and the channel name
-        if not channel_name: channel_name = getChannelName(channel, Max_Ngram = Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
+        if not channel_name: 
+            channel_name = getChannelName(channel, Max_Ngram = Max_Ngram, end_grain = end_grain, tagScheme = tagScheme,  min_grain_freq = 1)
 
-        if channel == 'token':
-            return cls._buildGVforToken(max_vocab_token_num = None, min_token_freq = 1)
-            
         # build the Path_Key
         if channel not in cls.CONTEXT_IND_CHANNELS:
             Path_Key = os.path.join(Data_Dir, 'Vocab')
         else:
-            # include token
-            max_vocab_token_num, min_token_freq = get_num_freq(cls.idx2freq, max_vocab_token_num = max_vocab_token_num, min_token_freq = min_token_freq)
-            folder = 'F' + str(min_token_freq) + 'N' + str(max_vocab_token_num)
+            min_token_freq = cls.min_token_freq if not min_token_freq else min_token_freq
+            # it cannot makes a folder
+            folder = 'F' + str(min_token_freq) 
             Path_Key = os.path.join(Data_Dir, 'Vocab', folder)
-            if not os.path.exists(Path_Key):
-                os.makedirs(TokenNum_Dir)
 
         # try to return the GV
         try:
@@ -590,8 +615,8 @@ class BasicObject(object):
                     else:
                         # TODO incorporate max grain num and min grain freq into channel_name in the future
                         return cls._buildGVforSub(Path_Key, channel, channel_name,
-                                                  max_vocab_token_num = max_vocab_token_num, min_token_freq = min_token_freq,
-                                                  max_vocab_grain_num = max_vocab_grain_num, min_grain_freq = min_grain_freq)
+                                                  min_token_freq = min_token_freq,
+                                                  min_grain_freq = min_grain_freq)
                 else:
                     channel_name_pickle = os.path.join(Path_Key, channel_name + '.voc')
                     print('In', Data_Dir, 'there is no GrainUnqiue for:', channel_name)
