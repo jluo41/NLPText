@@ -41,123 +41,150 @@ def geneTextFilePaths(corpusPath, orig_iden = '.txt', anno_iden = None):
     return FolderDict
 
 ##################################################################################################FOLDER-TEXT
+anno = 'annofile4text'
+anno_keywords = {
+    'ANNOIden': '.NER',
+    'anno_sep' : '\t', 
+    'notZeroIndex' : 1, 
+    'notRightOpen' : 0,
+}
 
-def textFileReader(folderPath, fileNames, anno = False, sep = '\t', notZeroIndex = 1,notRightOpen=0, **kwargs):
-    # folderPath is textFile path, one text only
-    # only here need to take care of annoLevel: text or sent.
-    # sep is SSET sep, not Sentence to Token Sep
+def annofile4text(folderPath, origTextName, fileNames, ORIGIden, ANNOIden, anno_sep = '\t', notZeroIndex = 1, notRightOpen=0, **kwargs):
+    SSETText = []
+    name = origTextName.replace(ORIGIden, '')
+    annoFileNames4Text = [f for f in fileNames if name in f and ANNOIden in f]
+    
+    if sum(['-sent' in f for f in annoFileNames4Text]) == 0:
+        # each file stores text annotation
+        strAnnoText = ''
+        annoTextName = origTextName.replace(ORIGIden, ANNOIden)
+        if annoTextName in fileNames:
+            strAnnoText  = fileReader(os.path.join(folderPath, annoTextName))
+        else:
+            print('Error', os.path.join(folderPath, annoTextName))
+
+        SSETText = [sset.split(anno_sep)[-4:] for sset in strAnnoText.split('\n') if anno_sep in sset]
+        L = []
+        for sset in SSETText:
+            try:
+                L.append([sset[0], int(sset[1]) - notZeroIndex, int(sset[2]) + notRightOpen, sset[3]])     
+            except:
+                pass
+        SSETText = L
+    return SSETText, annoTextName
+
+
+anno = 'annofile4sent'
+anno_keywords = {
+    'ANNOIden': '.NER',
+    'anno_sep' : '\t', 
+    'notZeroIndex' : 1, 
+    'notRightOpen' : 0,
+}
+
+def annofile4sent(folderPath, origTextName, fileNames, ORIGIden, ANNOIden, anno_sep = '\t', notZeroIndex = 1, notRightOpen=0, **kwargs):
+    # sentence based
+    SSETText = []
+
+    strAnnoText = ''
+    sentId   = 0
+    annoTextName = []
+    for _ in range(len(annoFileNames4Text)):
+        annoSentName = origTextName.replace(ORIGIden, '-sent' + str(sentId) + ANNOIden)
+        while not annoSentName in annoFileNames4Text:
+            print(sentId)
+            print(annoSentName)
+            sentId = sentId + 1
+            annoSentName = origTextName.replace(ORIGIden, '-sent' + str(sentId) + ANNOIden)
+        strAnnoText  = strAnnoText + '\n' + fileReader(os.path.join(folderPath, annoSentName))
+        annoTextName.append(annoSentName)
+        # print(os.path.join(folderPath, annoSentName))
+        sentId = sentId + 1
+        # print(strAnnoSent)
+        
+    SSETText = [sset.split(anno_sep)[-4:] for sset in strAnnoText.split('\n') if anno_sep in sset]
+    SSETText = [[sset[0], int(sset[1]) - notZeroIndex, int(sset[2]), sset[3]] for sset in SSETText] 
+
+    ### something different
+    txtCharIdx = 0
+    collapse   = 0
+    for ssetIdx, sset in enumerate(SSETText):
+        string, s, e, t = sset
+        string = string.replace('@', ' ') # TODO
+        lenString = len(string)
+        while string != strText[txtCharIdx: txtCharIdx + lenString]:
+            txtCharIdx = txtCharIdx + 1
+
+        SSETText[ssetIdx] = [string, txtCharIdx, txtCharIdx + lenString, t ]
+        txtCharIdx = txtCharIdx + lenString 
+
+    return SSETText, annoTextName
+
+def textFileReader(folderPath, fileNames, anno = False, **kwargs):
     ORIGIden = '.txt'
-    ANNOIden = anno
+    # ANNOIden = anno
     origTextName = None
     annoTextName = None
 
     origTextNames = [f for f in fileNames if ORIGIden in f]
     for origTextName in origTextNames:
+        
+        # here we process each text, and want to get strText, SSET, orig, anno
         SSETText = []
         with open(os.path.join(folderPath, origTextName), 'r', encoding = 'utf-8') as f:
             strText = strQ2B(f.read())
-        ########################################################## ANNO
-        if anno:
-            # step 1
-            name = origTextName.replace(ORIGIden, '')
-            annoFileNames4Text = [f for f in fileNames if name in f and ANNOIden in f]
-            
-            if sum(['-sent' in f for f in annoFileNames4Text]) >= 1:
-                ########################################################## SENT_ANNO
-                # step 2
-                # sent anno level
-                strAnnoText = ''
-                sentId   = 0
-                annoTextName = []
-                for _ in range(len(annoFileNames4Text)):
-                    annoSentName = origTextName.replace(ORIGIden, '-sent' + str(sentId) + ANNOIden)
-                    while not annoSentName in annoFileNames4Text:
-                        print(sentId)
-                        print(annoSentName)
-                        sentId = sentId + 1
-                        annoSentName = origTextName.replace(ORIGIden, '-sent' + str(sentId) + ANNOIden)
-                    strAnnoText  = strAnnoText + '\n' + fileReader(os.path.join(folderPath, annoSentName))
-                    annoTextName.append(annoSentName)
-                    # print(os.path.join(folderPath, annoSentName))
-                    sentId = sentId + 1
-                    # print(strAnnoSent)
-                    
-                SSETText = [sset.split(sep)[-4:] for sset in strAnnoText.split('\n') if sep in sset]
-                SSETText = [[sset[0], int(sset[1]) - notZeroIndex, int(sset[2]), sset[3]] for sset in SSETText] 
 
-                ### something different
-                txtCharIdx = 0
-                collapse   = 0
-                
-                for ssetIdx, sset in enumerate(SSETText):
-                    string, s, e, t = sset
-                    string = string.replace('@', ' ') # TODO
-                    lenString = len(string)
-                    while string != strText[txtCharIdx: txtCharIdx + lenString]:
-                        txtCharIdx = txtCharIdx + 1
+        if anno == 'annofile4text':
+            SSETText, annoTextName = annofile4text(folderPath, origTextName, fileNames, ORIGIden, **kwargs)
 
-                    SSETText[ssetIdx] = [string, txtCharIdx, txtCharIdx + lenString, t ]
-                    txtCharIdx = txtCharIdx + lenString 
-                ########################################################## SENT_ANNO
+        elif anno == 'annofile4sent':
+            SSETText, annoTextName = annofile4sent(folderPath, origTextName, fileNames, ORIGIden, **kwargs)
 
-            else:
-                # step 3
-                ########################################################## TEXT_ANNO
-                strAnnoText = ''
-                annoTextName = origTextName.replace(ORIGIden, ANNOIden)
-                if annoTextName in fileNames:
-                    strAnnoText  = fileReader(os.path.join(folderPath, annoTextName))
-                else:
-                    print('Error', os.path.join(folderPath, annoTextName))
-
-                SSETText = [sset.split(sep)[-4:] for sset in strAnnoText.split('\n') if sep in sset]
-                L = []
-                for sset in SSETText:
-                    try:
-                        L.append([sset[0], int(sset[1]) - notZeroIndex, int(sset[2]) + notRightOpen, sset[3]])     
-                    except:
-                        pass
-                SSETText = L
-                ########################################################## TEXT_ANNO
-                
-        # SSETText = [[sset,sset,sset,sset[3].split('-')[0]] for sset in SSETText]
         yield strText, SSETText, origTextName, annoTextName
 
+
+
+anno = 'anno_embed_in_text'
+anno_keywords = {}
+
+def anno_embed_in_text(line):
+    strText = ''
+    ST = [(block, 'O') if idx%2==0 else (block.split(':')[-1].strip(), block.split(':')[0]) 
+         for idx, block in enumerate(line.replace("}}", '{{').split('{{'))]
+    txtCharIdx = 0
+    for st in ST:
+        string, tag = st
+        strText = strText + string
+        sset = [string, txtCharIdx, txtCharIdx + len(string), tag]
+        txtCharIdx = sset[2]
+        if tag == 'O':
+            continue
+        SSETText.append(sset) 
+    return strText, SSET
 
 def textLineReader(folderPath, fileNames, anno = False, **kwargs):
     with smart_open(folderPath) as fin:
         for line in itertools.islice(fin, None):
-            # print(line)
             line = strQ2B(any2unicode(line))
+            strText = line
             SSETText = []
-            strText = ''
-            if anno == 'embed':
-                ST = [(block, 'O') if idx%2==0 else (block.split(':')[-1].strip(), block.split(':')[0]) 
-                     for idx, block in enumerate(line.replace("}}", '{{').split('{{'))]
-                txtCharIdx = 0
-                for st in ST:
-                    string, tag = st
-                    strText = strText + string
-                    sset = [string, txtCharIdx, txtCharIdx + len(string), tag]
-                    txtCharIdx = sset[2]
-                    if tag == 'O':
-                        continue
-                    SSETText.append(sset) 
-            else:
-                strText = line
-            # SSETText = [[sset,sset,sset,sset[3].split('-')[0]] for sset in SSETText]
+            if anno == 'anno_embed_in_text':
+                strText, SSETText = anno_embed_in_text(line)
             yield strText, SSETText, None, None
 
-
-def textBlockReader(folderPath, fileNames, anno = True, **kwargs):
-    with open(folderPath, 'r', encoding = 'utf-8') as f:
+anno = 'conll_block'
+anno_keywords = {
+    'anno_sep' = '\t'
+}
+def textBlockReader(folderPath, fileNames, anno = 'conll_block', anno_sep = ' ', **kwargs):
+    assert anno == 'conll_block'
+    with smart_open(folderPath) as f:
         L = []
         for line in f:
             line = strQ2B(line)
             if line != '\n':
-                L.append(strQ2B(line).replace('\n', '').split(' ')) # TODO: maybe different seps
+                L.append(strQ2B(line).replace('\n', '').split(anno_sep)) # TODO: maybe different seps
             else:
-                # TODO
                 strText = ''.join([ct[0] for ct in L])
                 CIT = [[ct[0], idx, ct[1]] for idx, ct in enumerate(L) if ct[1] != 'O']
                 startIdxes = [idx for idx in range(len(CIT)) if CIT[idx][-1][0] in ['B', 'S']] + [len(CIT)]
@@ -172,7 +199,7 @@ def textBlockReader(folderPath, fileNames, anno = True, **kwargs):
                 yield strText, SSETText, None, None
                 L = []
     
-
+# no annotation currently
 def textElementReader(folderPath, fileNames, anno = False, **kwargs):
     with open(folderPath, 'rb') as handle:
         L = pickle.load(handle)
@@ -180,19 +207,30 @@ def textElementReader(folderPath, fileNames, anno = False, **kwargs):
             strText = strQ2B(strText)
             yield strText, None, None, None
 
-def textJsonReader(folderPath, fileNames, anno = '.json', **kwargs):
-    with open(folderPath, 'rb') as file:
+anno = 'json_annotation'
+anno_keywords = {
+    'strText': 'content',
+    'labels': 'annotation',
+}
+def textJsonReader(folderPath, fileNames, anno = 'json_annotation', strText = 'content', labels = 'annotation', **kwargs):
+    assert anno == 'json_annotation'
+    with open(folderPath, 'r') as file:
         for line in file.readlines():
             dic = json.loads(line)
-            strText = dic['content']
+            strText = dic[strText]
             SSETText = []
-            tokens = dic['annotation']
-            for i in tokens:
-                token = [i['points'][0]['text'], i['points'][0]['start'], i['points'][0]['end']+1, ''.join(i['label'])]
-                SSETText.append(token)
+            labels = dic[labels]
+            for i in labels:
+                sset = [i['points'][0]['text'], i['points'][0]['start'], i['points'][0]['end']+1, ''.join(i['label'])]
+                SSETText.append(sset)
             yield strText, SSETText, None, None
 
-def textWordReader(folderPath, fileNames, anno = '.xlsx', **kwargs):
+anno = 'csv_annotation'
+anno_keywords = {
+    'ANNOIden': '.xlsx',
+}
+def textCSVReader(folderPath, fileNames, anno = 'csv_annotation',  ANNOIden = '.csv', **kwargs):
+    assert anno == 'csv_annotation'
     if anno == '.xlsx' or anno == '.csv':
         if anno == '.xlsx': 
             data = pd.read_excel(folderPath)
@@ -236,7 +274,7 @@ FolderTextsReaders = {
     'block':textBlockReader,
     'element': textElementReader,
     'json' : textJsonReader,
-    'word': textWordReader
+    'csv': textCSVReader
 }
 
 
@@ -441,109 +479,6 @@ def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_M
         hyper_info[ch] = ch_grain_sent
 
     return strTokens, hyper_info
-
-
-##################################################################################################TEXT-ANNO
-def getCITText(strText, SSETText, TOKENLevel='char'):
-    len(SSETText) > 0 
-    if TOKENLevel == 'char':
-        for sset in SSETText:
-            try:
-                assert strText[sset[1]: sset[2]] == sset[0]
-            except:
-                print('strText:', strText[sset[1] : sset[2]])
-                print('SSETText:', sset[0])
-        CITAnnoText = []
-        for sset in SSETText:
-            # BIOES
-            strAnno, s, e, tag = sset
-            CIT = [[c, s + idx, tag+ '-I']  for idx, c in enumerate(strAnno)]
-            CIT[-1][2] = tag + '-E'
-            CIT[ 0][2] = tag + '-B'
-            if len(CIT) == 1:
-                CIT[0][2] = tag + '-S' 
-            CITAnnoText.extend(CIT)
-
-        # print(strAnnoText)
-        CITText = [[char, idx, 'O'] for idx, char in enumerate(strText)]
-        for citAnno in CITAnnoText:
-            c, idx, t = citAnno
-            assert CITText[idx][0] == c
-            CITText[idx] = citAnno
-
-    elif TOKENLevel == 'word':
-        CITText = []
-        for idx, sset in enumerate(SSETText):
-            try:
-                assert sset[0] == strText[idx]
-            except:
-                print(strText)[idx]
-                print(sset[0])
-
-            CITText.append(sset)
-    return CITText
-
-def getCITSents(strSents, CITText):
-    lenLastSent = 0
-    collapse    = 0 # don't need to move 
-    CITSents = []
-    for strSent in strSents:
-        CITSent = []
-        for sentTokenIdx, c in enumerate(strSent):
-            # sentTokenIdx = txtTokenIdx - lenLastSent - collapse
-            txtTokenIdx = sentTokenIdx + lenLastSent + collapse
-            cT, _, tT = CITText[txtTokenIdx]
-            while c != cT and c != ' ':
-                collapse = collapse + 1
-                txtTokenIdx = sentTokenIdx + lenLastSent + collapse
-                cT, _, tT = CITText[txtTokenIdx]
-            CITSent.append([c,sentTokenIdx, tT])
-        lenLastSent = lenLastSent + len(strSent)
-        CITSents.append(CITSent)
-    # CITSents
-    # Here we get CITSents  
-    return CITSents
-       
-def getSSET_from_CIT(orig_seq, tag_seq, tag_seq_tagScheme = 'BIO', join_char = ''):
-    # orig_seq is sentence without start or end
-    # tag_seq may have start or end
-    if tag_seq[0] == '</start>':
-        tag_seq = tag_seq[1:-1]
-        
-    tagScheme = tag_seq_tagScheme
-    if tagScheme == 'BIOES':
-        tag_seq = [i.replace('-S', '-B').replace('-E', '-I') for i in tag_seq]
-    elif tagScheme == 'BIOE':
-        tag_seq = [i.replace('-E', '-I') for i in tag_seq]
-    elif tagScheme == 'BIOS':
-        tag_seq = [i.replace('-S', '-B') for i in tag_seq]
-    elif tagScheme == 'BIO':
-        pass
-    else:
-        print('The tagScheme', tagScheme, 'is not supported yet...')
-    
-    # use BIO tagScheme
-    CIT = list(zip(orig_seq, range(len(orig_seq)), tag_seq))
-    taggedCIT = [cit for cit in CIT if cit[2]!= 'O']
-    
-    startIdx = [idx for idx in range(len(taggedCIT)) if taggedCIT[idx][2][-2:] == '-B']
-    startIdx.append(len(taggedCIT))
-
-    entitiesList = []
-    for i in range(len(startIdx)-1):
-        entityAtom = taggedCIT[startIdx[i]: startIdx[i+1]]
-        string = join_char.join([cit[0] for cit in entityAtom])
-        start, end = entityAtom[0][1], entityAtom[-1][1] + 1
-        tag = entityAtom[0][2].split('-')[0]
-        entitiesList.append((string, start, end, tag))
-
-    # if join_char == '*':
-    #     a = [set([t.split('-')[0] for t in i[0].split('*')]) for i in entitiesList]
-    #     for i in a:
-    #         if len(i) > 1:
-    #             pprint(list(zip(orig_seq, tag_seq)))
-                
-    return entitiesList
 
 
 def get_line_with_position(path, start_position):

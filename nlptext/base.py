@@ -9,8 +9,8 @@ from .utils.infrastructure import writeGrainList2File, readPickleFile2GrainUniqu
 from .utils.infrastructure import modify_wordBoundary_with_hyperBoundary, trans_charLabels_to_wordLabels
 from .utils.infrastructure import getTagDict, trans_bioesTag
 
-from .utils.pyramid import CorpusGroupsReader, FolderTextsReaders, segText2Sents, segSent2Tokens, getCITText, getCITSents, getSSET_from_CIT
-
+from .utils.pyramid import CorpusGroupsReader, FolderTextsReaders, segText2Sents, segSent2Tokens, 
+from .utils.anno import getCITText, getCITSents, getSSET_from_CIT
 from .utils.vocab import buildTokens, get_GU_or_LKP, get_num_freq
 
 from .utils.channel import CONTEXT_IND_CHANNELS, CONTEXT_DEP_CHANNELS, ANNO_CHANNELS, CHANNEL_ABBR
@@ -550,7 +550,7 @@ class BasicObject(object):
         return GrainVocab
 
     @classmethod
-    def getGrainVocab(cls, channel, Min_Mgram = 1, Max_Ngram = 1, end_grain = False, tagScheme = 'BIO', min_grain_freq = 1, channel_name = None,
+    def getGrainVocab(cls, channel, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, tagScheme = 'BIO', min_grain_freq = 1, channel_name = None,
                       min_token_freq = None, Data_Dir = None,  **kwargs):
 
         # for token, only return itself token vocab
@@ -565,7 +565,8 @@ class BasicObject(object):
 
         # build the path key and the channel name
         if not channel_name: 
-            channel_name = getChannelName(channel, Min_Mgram = Min_Mgram, Max_Ngram = Max_Ngram, end_grain = end_grain, min_grain_freq = min_grain_freq, tagScheme = tagScheme)
+            print(Min_Ngram)
+            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, min_grain_freq = min_grain_freq, tagScheme = tagScheme)
 
         # build the Path_Key
         if channel not in cls.CONTEXT_IND_CHANNELS:
@@ -605,38 +606,77 @@ class BasicObject(object):
         # find the Data_Dir
         Data_Dir = cls.Data_Dir if not Data_Dir else Data_Dir
 
+        # build the path key and the channel name
         if not channel_name: 
-            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, 
-                end_grain = end_grain, min_grain_freq = min_grain_freq)
+            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, min_grain_freq = min_grain_freq)
 
         # build the Path_Key
-        max_vocab_token_num = get_num_freq(cls.idx2freq, min_token_freq = min_token_freq)
-        folder = 'F' + str(min_token_freq) + 'N' + str(max_vocab_token_num)
-        Path_Key  = os.path.join(Data_Dir, 'Vocab', folder)
-        Vocab_Key = os.path.join(Data_Dir, 'Vocab')
-        
+        min_token_freq = cls.min_token_freq if not min_token_freq else min_token_freq
+        # it cannot makes a folder
+        folder = 'F' + str(min_token_freq) 
+        Path_Key = os.path.join(Data_Dir, 'Vocab', folder)
+
         try:
             # generall, we hope this can give us results.
             LKP = cls.LOOKUP[Path_Key][channel_name]
+            TV = cls.getGrainVocab(channel = 'token', Data_Dir = Data_Dir)
+            return LKP, TV
         except:
             try:
                 path = os.path.join(Path_Key, channel_name + '.lkp')
-                
-                assert os.path.isfile(path)
-
+                # assert os.path.isfile(path)
                 with open(path, 'rb') as handle:
                     LKP = pickle.load(handle)
                 
                 cls.LOOKUP[Path_Key] = cls.LOOKUP[Path_Key] if Path_Key in cls.LOOKUP else {}
                 cls.LOOKUP[Path_Key][channel_name] = LKP
 
-                TV = cls.getGrainVocab(channel = 'token', channel_name = 'token', Data_Dir = Data_Dir)
+                # read from other pyramid is still no valid
+                TV = cls.getGrainVocab(channel = 'token', Data_Dir = Data_Dir)
                 print('Get LookUp Table for Channel:', channel_name)
                 return LKP, TV
             except:
                 print('\tIn', Path_Key, 'there is no LookUp Table for:', channel_name)
                 print('\tError in:', path)
                 return None
+
+    @classmethod
+    def getFreq(cls, channel = None, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, channel_name = None,
+                  Data_Dir = None, min_grain_freq = 1, min_token_freq = None, **kwargs):
+
+        # find the Data_Dir
+        Data_Dir = cls.Data_Dir if not Data_Dir else Data_Dir
+        
+        # build the path key and the channel name
+        if not channel_name: 
+            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, min_grain_freq = min_grain_freq)
+
+        # build the Path_Key
+        min_token_freq = cls.min_token_freq if not min_token_freq else min_token_freq
+        # it cannot makes a folder
+        folder = 'F' + str(min_token_freq) 
+        Path_Key = os.path.join(Data_Dir, 'Vocab', folder)
+
+        try:
+            # generall, we hope this can give us results.
+            Freq = cls.FREQ[Path_Key][channel_name]
+            return Freq
+        except:
+            try:
+                path = os.path.join(Path_Key, channel_name + '.freq')
+                # assert os.path.isfile(path)
+                with open(path, 'rb') as handle:
+                    Freq = pickle.load(handle)
+                
+                cls.FREQ[Path_Key] = cls.FREQ[Path_Key] if Path_Key in cls.FREQ else {}
+                cls.FREQ[Path_Key][channel_name] = Freq
+                # read from other pyramid is still no valid
+                return Freq
+            except:
+                print('\tIn', Path_Key, 'there is no LookUp Table for:', channel_name)
+                print('\tError in:', path)
+                return None
+
 
     @classmethod
     def getTrans(cls, channel, tagScheme, Data_Dir = None, GU = None):
