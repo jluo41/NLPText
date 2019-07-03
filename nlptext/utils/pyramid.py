@@ -12,9 +12,9 @@ from .infrastructure import strQ2B, fileReader, any2unicode
 
 ##################################################################################################CORPUS-FOLDER
 # Important One 
-def CorpusGroupsReader(CORPUSPath, iden = None):
+def CorpusGroupsReader(CORPUSPath, iden = 'Dir'):
     # file is the priority
-    if iden:
+    if iden != 'Dir':
         corpusFiles = [i for i in os.listdir(CORPUSPath) if iden in i]
         return {os.path.join(CORPUSPath, fd): '' for fd in corpusFiles}, 'File'
     else:
@@ -49,7 +49,7 @@ anno_keywords = {
     'notRightOpen' : 0,
 }
 
-def annofile4text(folderPath, origTextName, fileNames, ORIGIden, ANNOIden, anno_sep = '\t', notZeroIndex = 1, notRightOpen=0, **kwargs):
+def annofile4text(strText, folderPath, origTextName, fileNames, ORIGIden, ANNOIden, anno_sep = '\t', notZeroIndex = 1, notRightOpen=0, **kwargs):
     SSETText = []
     name = origTextName.replace(ORIGIden, '')
     annoFileNames4Text = [f for f in fileNames if name in f and ANNOIden in f]
@@ -82,7 +82,9 @@ anno_keywords = {
     'notRightOpen' : 0,
 }
 
-def annofile4sent(folderPath, origTextName, fileNames, ORIGIden, ANNOIden, anno_sep = '\t', notZeroIndex = 1, notRightOpen=0, **kwargs):
+def annofile4sent(strText, folderPath, origTextName, fileNames, ORIGIden, ANNOIden, anno_sep = '\t', notZeroIndex = 1, notRightOpen=0, **kwargs):
+    name = origTextName.replace(ORIGIden, '')
+    annoFileNames4Text = [f for f in fileNames if name in f and ANNOIden in f]
     # sentence based
     SSETText = []
 
@@ -135,10 +137,10 @@ def textFileReader(folderPath, fileNames, anno = False, **kwargs):
             strText = strQ2B(f.read())
 
         if anno == 'annofile4text':
-            SSETText, annoTextName = annofile4text(folderPath, origTextName, fileNames, ORIGIden, **kwargs)
+            SSETText, annoTextName = annofile4text(strText, folderPath, origTextName, fileNames, ORIGIden, **kwargs)
 
         elif anno == 'annofile4sent':
-            SSETText, annoTextName = annofile4sent(folderPath, origTextName, fileNames, ORIGIden, **kwargs)
+            SSETText, annoTextName = annofile4sent(strText, folderPath, origTextName, fileNames, ORIGIden, **kwargs)
 
         yield strText, SSETText, origTextName, annoTextName
 
@@ -179,8 +181,11 @@ anno_keywords = {
     'anno_sep': '\t',
     'connector': '',
     'suffix': False,
+    'change_tags': False, 
 }
-def textBlockReader(folderPath, fileNames, anno = 'conll_block', connector = '', suffix = True, anno_sep = ' ', **kwargs):
+
+def textBlockReader(folderPath, fileNames, anno = 'conll_block', change_tags = False, 
+                    connector = '', suffix = True, anno_sep = ' ', **kwargs):
     assert anno == 'conll_block'
     if suffix:
         indicator, labelidx = -1, 0
@@ -195,10 +200,26 @@ def textBlockReader(folderPath, fileNames, anno = 'conll_block', connector = '',
             else:
                 strText = [ct[0] for ct in L]
                 strText = connector.join(strText)
+                
+                # print(CIT)
+                if change_tags:
+
+                    TotalCIT = [[ct[0], idx, ct[-1]] for idx, ct in enumerate(L)]
+                    # print(TotalCIT)
+                    for idx, cit in enumerate(TotalCIT):
+                        currentTag = cit[-1]
+                        if 'I-' not in currentTag:
+                            continue
+                        lastTag = TotalCIT[idx - 1][-1] if idx > 1 else 'null'
+                        if currentTag != lastTag:
+                            TotalCIT[idx][-1] = cit[-1].replace('I-', 'B-')
+
+                    L = TotalCIT
+
                 CIT = [[ct[0], idx, ct[-1]] for idx, ct in enumerate(L) if ct[-1] != 'O']
-                print(CIT)
+
                 startIdxes = [idx for idx in range(len(CIT)) if CIT[idx][-1][indicator] in ['B', 'S']] + [len(CIT)]
-                print(startIdxes)
+                # print(startIdxes)
                 SSETText = []
                 for i in range(len(startIdxes)-1):
                     OneCIT = CIT[startIdxes[i]: startIdxes[i+1]]
@@ -207,9 +228,9 @@ def textBlockReader(folderPath, fileNames, anno = 'conll_block', connector = '',
                     tag = OneCIT[0][-1].split('-')[labelidx]
                     SSETText.append([string, start, end, tag])
                 # SSETText = [[sset,sset,sset,sset[3].split('-')[0]] for sset in SSETText]
-                
-                print(strText)
-                print(SSETText)
+                # print('In Block Reader')
+                # print(strText)
+                # print(SSETText)
                 yield strText, SSETText, None, None
                 L = []
     

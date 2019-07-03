@@ -17,13 +17,6 @@ from .utils.channel import CONTEXT_IND_CHANNELS, CONTEXT_DEP_CHANNELS, ANNO_CHAN
 from .utils.channel import Channel_Dep_Methods, Channel_Dep_TagSets, getChannelName, get_Channel_Settings
 
 
-# TODO: to remove these two items
-# MaxTextIdx = False 
-# MaxTokenUnique = 3500000
-
-# the default length for the whole corpus
-DEFAULT_SENT_LENG = 5000000
-
 # labels and tags
 # labels: ['Person', 'Location']
 # tags  : ['O', Person-B', 'Person-I', 'Location-B', 'Location-I']
@@ -124,12 +117,12 @@ class BasicObject(object):
         
         # group information
         GROUP = {}; GROUP['Corpus2GroupMethod'] = Corpus2GroupMethod 
-        GROUP['GroupType']   = 'File' if Corpus2GroupMethod else 'Folder'; GROUP['group_names'] = []; GROUP['EndIDXTexts'] = []
-                
+        GROUP['GroupType']   = 'File' if Corpus2GroupMethod != 'Dir' else 'Dir'; GROUP['group_names'] = []; GROUP['EndIDXTexts'] = []
+        
         # text information
         TEXT = {}; TEXT['Group2TextMethod'] = Group2TextMethod; TEXT['EndIDXSents'] = []
         if Group2TextMethod == 'file': TEXT['ORIGFileName'] = []
-        if '.' in str(anno): TEXT['ANNOFileName'] = []
+        if 'ANNOIden' in anno_keywords: TEXT['ANNOFileName'] = []
             
         # sentence information
         SENT = {}; SENT['Text2SentMethod'] = Text2SentMethod; SENT['EndIDXTokens'] = []
@@ -140,11 +133,13 @@ class BasicObject(object):
         TOKEN = {}; TOKEN['Sent2TokenMethod'] = Sent2TokenMethod
         TOKEN['TOKENLevel'] = TOKENLevel; TOKEN['Channel_Hyper_Path'] = cls.Channel_Hyper_Path
 
+
         # consider how to deal with the annotation information
         ANNO = {}; ANNO['anno'] = anno; ANNO['anno_keywords'] = anno_keywords
 
         ################################################################################################################
         CorpusGroups, GroupType = CorpusGroupsReader(CORPUSPath, iden = Corpus2GroupMethod)
+        # print()
         assert GROUP['GroupType'] == GroupType
         pprint(GroupType)
 
@@ -237,9 +232,9 @@ class BasicObject(object):
                                 cls.VOCAB[Path_Key]['annoE-bioes'][0].append(label + suffix)
 
                     # it will check strText and SSET inside getCITText
-                    CITText  = getCITText(strText, SSETText,TOKENLevel) 
+                    CITText  = getCITText(strText, SSETText, TOKENLevel) 
                     # get CITSents
-                    CITSents = getCITSents(strSents, CITText)
+                    CITSents = getCITSents(strSents, CITText, TOKENLevel)
                     
                     for sentIdx, CITSent in enumerate(CITSents):
                         anno_tags = [CITToken[2] for CITToken in CITSent]

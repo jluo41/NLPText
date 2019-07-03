@@ -50,22 +50,27 @@ def getCITText(strText, SSETText, TOKENLevel='char'):
                 CIT[0][2] = tag + '-S' 
             CITAnnoText.extend(CIT)
 
-        print('\nCITAnnoText\n')
-        print(CITAnnoText)
-
-        print('\n')
-        print(strText)
-        print('\n')
+        # print('\nCITAnnoText\n')
+        # print(CITAnnoText)
+        # print('\n')
+        # print(strText)
+        # print('\n')
         CITText = [[char, idx, 'O'] for idx, char in enumerate(strText)]
         for citAnno in CITAnnoText:
             c, idx, t = citAnno
             assert CITText[idx][0] == c
             CITText[idx] = citAnno
-        print('                 English CITText')
-        print(CITText)
+        # print('                 English CITText')
+        # print(CITText)
     return CITText
 
-def getCITSents(strSents, CITText):
+def getCITSents(strSents, CITText, TOKENLevel='char'):
+    # if TOKENLevel == 'char':
+    if TOKENLevel == 'word':
+        strSents = [strSent.split(' ') for strSent in strSents]
+    # print('\nin strSents\n')
+    # print(strSents)
+    # print(CITText)
     lenLastSent = 0
     collapse    = 0 # don't need to move 
     CITSents = []
