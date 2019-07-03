@@ -148,6 +148,7 @@ anno = 'anno_embed_in_text'
 anno_keywords = {}
 
 def anno_embed_in_text(line):
+    SSETText = []
     strText = ''
     ST = [(block, 'O') if idx%2==0 else (block.split(':')[-1].strip(), block.split(':')[0]) 
          for idx, block in enumerate(line.replace("}}", '{{').split('{{'))]
@@ -160,7 +161,7 @@ def anno_embed_in_text(line):
         if tag == 'O':
             continue
         SSETText.append(sset) 
-    return strText, SSET
+    return strText, SSETText
 
 def textLineReader(folderPath, fileNames, anno = False, **kwargs):
     with smart_open(folderPath) as fin:
@@ -170,32 +171,45 @@ def textLineReader(folderPath, fileNames, anno = False, **kwargs):
             SSETText = []
             if anno == 'anno_embed_in_text':
                 strText, SSETText = anno_embed_in_text(line)
+            # print(strText)
             yield strText, SSETText, None, None
 
 anno = 'conll_block'
 anno_keywords = {
-    'anno_sep' = '\t'
+    'anno_sep': '\t',
+    'connector': '',
+    'suffix': False,
 }
-def textBlockReader(folderPath, fileNames, anno = 'conll_block', anno_sep = ' ', **kwargs):
+def textBlockReader(folderPath, fileNames, anno = 'conll_block', connector = '', suffix = True, anno_sep = ' ', **kwargs):
     assert anno == 'conll_block'
+    if suffix:
+        indicator, labelidx = -1, 0
+    else:
+        indicator, labelidx = 0, -1
     with smart_open(folderPath) as f:
         L = []
         for line in f:
-            line = strQ2B(line)
+            line = strQ2B(any2unicode(line))
             if line != '\n':
                 L.append(strQ2B(line).replace('\n', '').split(anno_sep)) # TODO: maybe different seps
             else:
-                strText = ''.join([ct[0] for ct in L])
-                CIT = [[ct[0], idx, ct[1]] for idx, ct in enumerate(L) if ct[1] != 'O']
-                startIdxes = [idx for idx in range(len(CIT)) if CIT[idx][-1][0] in ['B', 'S']] + [len(CIT)]
+                strText = [ct[0] for ct in L]
+                strText = connector.join(strText)
+                CIT = [[ct[0], idx, ct[-1]] for idx, ct in enumerate(L) if ct[-1] != 'O']
+                print(CIT)
+                startIdxes = [idx for idx in range(len(CIT)) if CIT[idx][-1][indicator] in ['B', 'S']] + [len(CIT)]
+                print(startIdxes)
                 SSETText = []
                 for i in range(len(startIdxes)-1):
                     OneCIT = CIT[startIdxes[i]: startIdxes[i+1]]
-                    string = ''.join(cit[0] for cit in OneCIT)
+                    string = connector.join(cit[0] for cit in OneCIT)
                     start, end = OneCIT[0][1], OneCIT[-1][1] + 1
-                    tag = OneCIT[0][-1].split('-')[1]
+                    tag = OneCIT[0][-1].split('-')[labelidx]
                     SSETText.append([string, start, end, tag])
                 # SSETText = [[sset,sset,sset,sset[3].split('-')[0]] for sset in SSETText]
+                
+                print(strText)
+                print(SSETText)
                 yield strText, SSETText, None, None
                 L = []
     
@@ -207,6 +221,7 @@ def textElementReader(folderPath, fileNames, anno = False, **kwargs):
             strText = strQ2B(strText)
             yield strText, None, None, None
 
+# for json annotation
 anno = 'json_annotation'
 anno_keywords = {
     'strText': 'content',
@@ -296,12 +311,10 @@ def reChnCutText2Sent(text, useSep = False):
     # 3. tokens in the sentence contain hyper information, but still separated by space.
     #    '汉字_nz 表示_v 的_u 数_n 学_n 一_m 词_n 大约_d 产生_v 于_p 中国_ns 宋元_t 时期_n 。_w'
 
-    # I didn't find good way to deal with the English. The common way to use is whole. 
-    # we will use whole line as a sentence for English file.
     ###################### Remove some weird chars #######################
     text = re.sub('\xa0', '', text)
+    text = re.sub('\\n', '', text)
 
-    # keep the spaces between two English letters.
     # text = re.sub(r'(?<=[A-Za-z])\s+(?=[|A-Za-z])', 'ⴷ',  text)
     
     ###################### Convert the S+ spaces to '〰' #################
@@ -330,10 +343,10 @@ def reChnCutText2Sent(text, useSep = False):
     text = re.sub( '\n+', '\n', text ).strip() # replace '\n+' to '\n'
     text = text.replace('\\n', '\n')
     text = text.split("\n")
-    text = [sent.strip() for sent in text]
-    # text = [sent.replace(' ', '').replace('\\n', '') for sent in text]
+    sents = [sent.strip() for sent in text]
+    # text = [sent.replace('\\n', '') for sent in text]
 
-    return text # [sent for sent in text if len(sent)>=2]
+    return sents # [sent for sent in text if len(sent)>=2]
 
 def lineCutText2Sent(text):
     return text.split('\n')
@@ -402,10 +415,10 @@ def segText2Sents(text, method = 'whole', **kwargs):
 
     # postprocessing
     # after this, there is no '\n' in sents
-    sents = [sent.replace('\n', '') for sent in sents]
-
+    sents = [sent.replace('\n', '').replace('\\n', '') for sent in sents]
+    sents = [sent for sent in sents if len(sent) > 5]
+    # print(sents)
     return sents
-
 
 ##################################################################################################SENT-TOKEN
 

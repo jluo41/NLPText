@@ -9,7 +9,7 @@ from .utils.infrastructure import writeGrainList2File, readPickleFile2GrainUniqu
 from .utils.infrastructure import modify_wordBoundary_with_hyperBoundary, trans_charLabels_to_wordLabels
 from .utils.infrastructure import getTagDict, trans_bioesTag
 
-from .utils.pyramid import CorpusGroupsReader, FolderTextsReaders, segText2Sents, segSent2Tokens, 
+from .utils.pyramid import CorpusGroupsReader, FolderTextsReaders, segText2Sents, segSent2Tokens
 from .utils.anno import getCITText, getCITSents, getSSET_from_CIT
 from .utils.vocab import buildTokens, get_GU_or_LKP, get_num_freq
 
@@ -73,7 +73,7 @@ class BasicObject(object):
              Text2SentMethod, 
              Sent2TokenMethod, TOKENLevel, min_token_freq = 1,
              use_hyper = False, Channel_Dep_Methods = Channel_Dep_Methods, Channel_Dep_TagSets = Channel_Dep_TagSets, 
-             anno = False, annoKW = {}):
+             anno = False, anno_keywords = {}):
         
         Channel_Dep_Methods = {} if not use_hyper else Channel_Dep_Methods
         Channel_Dep_TagSets = {} if not use_hyper else Channel_Dep_TagSets
@@ -106,9 +106,16 @@ class BasicObject(object):
             if os.path.isfile(cls.Channel_Hyper_Path[ch]):
                 os.remove(cls.Channel_Hyper_Path[ch])
 
+        # to enrich annoE vocab inside it.
+        if anno: 
+            cls.VOCAB[Path_Key]['annoE-bioes'] = (['O'], {'O': 0}); anno_labels = []
+            cls.Channel_Hyper_Path['annoE'] =  os.path.join(File_Dir, 'annoE-bioes' + '.txt')
+            if os.path.isfile(cls.Channel_Hyper_Path['annoE']):
+                os.remove(cls.Channel_Hyper_Path['annoE'])
+
         ################################################################################################################
         # for annotation
-        assert anno == False or '.' in anno or anno == 'embed'
+        # assert anno == False or '.' in anno or anno == 'embed'
     
         ################################################################################################################
         # init 五大老五奉行
@@ -134,7 +141,7 @@ class BasicObject(object):
         TOKEN['TOKENLevel'] = TOKENLevel; TOKEN['Channel_Hyper_Path'] = cls.Channel_Hyper_Path
 
         # consider how to deal with the annotation information
-        ANNO = {}; ANNO['anno'] = anno; ANNO['annoKW'] = annoKW
+        ANNO = {}; ANNO['anno'] = anno; ANNO['anno_keywords'] = anno_keywords
 
         ################################################################################################################
         CorpusGroups, GroupType = CorpusGroupsReader(CORPUSPath, iden = Corpus2GroupMethod)
@@ -150,7 +157,7 @@ class BasicObject(object):
             # the following block deals with each group in a corpus
             print(group_name)
             text_names = CorpusGroups[group_name]
-            GroupTexts = FolderTextsReaders[Group2TextMethod](group_name, text_names, anno, **annoKW)
+            GroupTexts = FolderTextsReaders[Group2TextMethod](group_name, text_names, anno, **anno_keywords)
             textIdx = 0
             for strText_SSET_O_A in GroupTexts:
                 # the following block deals with each text in a group
@@ -221,6 +228,14 @@ class BasicObject(object):
                 if anno: 
                     if SSETText == []: print('\nThe SSET of this Text is Empty!!!', '\n', strText, '\n')
 
+                    new_labels = set([sset[-1] for sset in SSETText])
+                    for label in new_labels:
+                        if label not in anno_labels:
+                            anno_labels.append(label)
+                            for suffix in ['-B', '-I', '-E', '-S']:
+                                cls.VOCAB[Path_Key]['annoE-bioes'][1][label + suffix] = len(cls.VOCAB[Path_Key]['annoE-bioes'][1])
+                                cls.VOCAB[Path_Key]['annoE-bioes'][0].append(label + suffix)
+
                     # it will check strText and SSET inside getCITText
                     CITText  = getCITText(strText, SSETText,TOKENLevel) 
                     # get CITSents
@@ -228,8 +243,7 @@ class BasicObject(object):
                     
                     for sentIdx, CITSent in enumerate(CITSents):
                         anno_tags = [CITToken[2] for CITToken in CITSent]
-                        # TODO, build annoE-bioes vocab 
-                        anno_tags = [cls.VOCAB[Path_Key]['annoE-bioes'][1][i] for i in anno_tags]
+                        anno_tags = [str(cls.VOCAB[Path_Key]['annoE-bioes'][1][i]) for i in anno_tags]
                         with open(cls.Channel_Hyper_Path['annoE'], 'a') as f:
                             line_sentence = ' '.join(anno_tags) + '\n'
                             f.write(line_sentence)

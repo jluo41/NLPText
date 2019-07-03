@@ -29,15 +29,40 @@ def getCITText(strText, SSETText, TOKENLevel='char'):
             CITText[idx] = citAnno
 
     elif TOKENLevel == 'word':
-        CITText = []
-        for idx, sset in enumerate(SSETText):
+        strText = strText.split(' ')
+        for sset in SSETText:
             try:
-                assert sset[0] == strText[idx]
+                assert ' '.join(strText[sset[1]: sset[2]]) == sset[0]
             except:
-                print(strText)[idx]
-                print(sset[0])
+                print('strText:', strText[sset[1] : sset[2]])
+                print('SSETText:', sset[0])
 
-            CITText.append(sset)
+        CITAnnoText = []
+        for sset in SSETText:
+            # BIOES
+            strAnno, s, e, tag = sset
+            # this is important
+            strAnno = strAnno.split(' ')
+            CIT = [[c, s + idx, tag+ '-I']  for idx, c in enumerate(strAnno)]
+            CIT[-1][2] = tag + '-E'
+            CIT[ 0][2] = tag + '-B'
+            if len(CIT) == 1:
+                CIT[0][2] = tag + '-S' 
+            CITAnnoText.extend(CIT)
+
+        print('\nCITAnnoText\n')
+        print(CITAnnoText)
+
+        print('\n')
+        print(strText)
+        print('\n')
+        CITText = [[char, idx, 'O'] for idx, char in enumerate(strText)]
+        for citAnno in CITAnnoText:
+            c, idx, t = citAnno
+            assert CITText[idx][0] == c
+            CITText[idx] = citAnno
+        print('                 English CITText')
+        print(CITText)
     return CITText
 
 def getCITSents(strSents, CITText):
