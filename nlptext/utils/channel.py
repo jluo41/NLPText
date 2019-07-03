@@ -291,6 +291,7 @@ Channel_Dep_TagSets = {'pos': posTag}
 
 
 ################################################################################################
+
 def getGrainNgrams(subword_infos, n):
     if n == 1:
         return [i for i in subword_infos]
@@ -302,31 +303,37 @@ def getGrainNgrams(subword_infos, n):
     l = ['-'.join(i) for i in l]
     return l
 
+
 def grainToken(token, grainTokenFunction, Ngram = None, Min_Ngram = 1, Max_Ngram = 1, end_grain = True):
     infos =  grainTokenFunction(token, end_grain = end_grain) 
-    if Ngram: Min_Ngram, Max_Ngram = Ngram, Ngram + 1
-    return sum([getGrainNgrams(infos, idx+1) for idx in range(Min_Ngram, Max_Ngram + 1)], [])
+    if Ngram: Min_Ngram, Max_Ngram = Ngram, Ngram
+    return sum([getGrainNgrams(infos, idx) for idx in range(Min_Ngram, Max_Ngram + 1)], [])
 
 
-###############################################################################################################
-def getChannelGrain4Token(token, channel, Ngram = 1, Max_Ngram = None,  end_grain = False):
+def getChannelGrain4Token(token, channel, Ngram = None, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False):
     if channel == 'token':
         return [token]
     elif channel in Channel_Ind_Methods:
-        return grainToken(token, Channel_Ind_Methods[channel], Ngram = Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain)
+        return grainToken(token, Channel_Ind_Methods[channel], Ngram = Ngram, Min_Ngram = Min_Ngram,Max_Ngram = Max_Ngram, end_grain = end_grain)
     else:
         print('The Channel "', channel, '" is not available currently!')
 
 
-def getChannelGrain4Sent(sent, channel, Ngram = 1, Max_Ngram = None, tokenLevel = 'char', tagScheme =  'BIO', end_grain = False):
+
+def getChannelGrain4Sent(sent, channel, Ngram = None, Min_Ngram = 1, Max_Ngram = 1, tokenLevel = 'char', tagScheme =  'BIO', end_grain = False):
     if channel in Channel_Ind_Methods:
-        return [getChannelGrain4Token(token, channel, Ngram, Max_Ngram, end_grain) for token in sent]
+        return [getChannelGrain4Token(token, channel, Ngram, Min_Ngram, Max_Ngram, end_grain) for token in sent]
         # return grainSent_ctxInd(sent, channel, Ngram = Ngram, Max_Ngram = Max_Ngram,  end_grain = end_grain)
     elif channel in Channel_Dep_Methods:
         return Channel_Dep_Methods[channel](sent, tokenLevel = tokenLevel, tagScheme = tagScheme)
         # return grainSent_ctxDep(sent, Channel_Dep_Methods[channel], tokenLevel =tokenLevel, tagScheme = tagScheme, useStartEnd = useStartEnd)
     else:
         print('The Channel "', channel, '" is not available currently!')
+
+
+###############################################################################################################
+from nlptext.utils.channel import CHANNEL_ABBR, CONTEXT_IND_CHANNELS
+
 
 ###############################################################################################################
 def getChannelName(channel, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO', min_grain_freq = 1,
@@ -340,10 +347,10 @@ def getChannelName(channel, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False, ta
             MN = '-n' + str(Min_Ngram) + 't' + str(Max_Ngram)
             e  = 'e' if end_grain else ''
             f  = '-f' + str(min_grain_freq)
-            return channel + MN + e + tS 
+            return channel + MN + e + f
         else:
             tS = '-' + tagScheme.lower() 
-            return channel + f 
+            return channel + tS
 
     elif style == 'abbr':
         channel_abbr = CHANNEL_ABBR[channel] 
@@ -353,10 +360,10 @@ def getChannelName(channel, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False, ta
             MN = '-n' + str(Min_Ngram) + 't' + str(Max_Ngram)
             e  = 'e' if end_grain else ''
             f  = '-f' + str(min_grain_freq)
-            return channel_abbr + MN + e + tS 
+            return channel_abbr + MN + e + f
         else:
             tS = '-' + tagScheme.lower() 
-            return channel_abbr + f 
+            return channel_abbr + tS
 
     elif channel_name and style == 'extract':
         assert channel in channel_name
@@ -365,9 +372,10 @@ def getChannelName(channel, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False, ta
 
         elif channel in CONTEXT_IND_CHANNELS:
             channel_name, freq = channel_name.split('-f')
-            min_grain_freq = int(min_grain_freq)
-            MN_e = channel_name.split('-n') 
-            if 'e' in MN:
+            min_grain_freq = int(freq)
+            MN_e = channel_name.split('-n')[1]
+            # print(MN_e)
+            if 'e' in MN_e:
                 end_grain = True
                 MN = MN_e[:-1]
             else:
@@ -382,15 +390,15 @@ def getChannelName(channel, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False, ta
         
     elif channel_name_abbr and style == 'extract':
         channel_abbr = CHANNEL_ABBR[channel]
-
+        assert channel_abbr in channel_name_abbr
         if channel == 'token':
             return channel_abbr, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme
 
         elif channel in CONTEXT_IND_CHANNELS:
-            channel_name, freq = channel_name.split('-f')
-            min_grain_freq = int(min_grain_freq)
-            MN_e = channel_name.split('-n') 
-            if 'e' in MN:
+            channel_name, freq = channel_name_abbr.split('-f')
+            min_grain_freq = int(freq)
+            MN_e = channel_name.split('-n') [1]
+            if 'e' in MN_e:
                 end_grain = True
                 MN = MN_e[:-1]
             else:
@@ -404,6 +412,7 @@ def getChannelName(channel, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False, ta
             return channel_abbr, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme
     else:
         print('Error in getChannelName')
+
 
 def get_Channel_Settings(CHANNEL_SETTINGS_TEMPLATE):
     d = CHANNEL_SETTINGS_TEMPLATE.copy()

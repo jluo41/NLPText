@@ -52,19 +52,26 @@ def buildTokens(tokenList):
 ##################################################################################################TOKEN_LTU
 
 
+##################################################################################################LTU_LGU-LT
+from datetime import datetime
+
+import numpy as np
+from nlptext.utils.channel import getChannelGrain4Token
+import collections
+
+
+
 def get_num_freq(idx2freq, min_token_freq = 1):
-    max_vocab_token_num = len(idx2freq[idx2freq > min_token_freq])
+    max_vocab_token_num = len(idx2freq[idx2freq >= min_token_freq])
     return max_vocab_token_num
 
-##################################################################################################LTU_LGU-LT
-def get_GU_or_LKP(TokenVocab, tkidx2freq, channel= 'char',
-                  Min_Ngram = 1, Max_Ngram = 1, end_grain = False, 
-                  min_grain_freq = 1, min_token_freq = 1 ):
+def get_GU_or_LKP(TokenVocab, tkidx2freq, 
+                  channel= 'char', Min_Ngram = 1, Max_Ngram = 1, end_grain = False, min_grain_freq = 1):
 
     # ListGrainUnique = []
     LTU, DTU = TokenVocab
-    max_vocab_token_num = get_num_freq(tkidx2freq, min_token_freq = min_token_freq)
-    LTU = LTU[:max_vocab_token_num]
+    # max_vocab_token_num = get_num_freq(tkidx2freq, min_token_freq = min_token_freq)
+    # LTU = LTU[:max_vocab_token_num]
     
     # the containers to store our results
     oldLGU = []
@@ -74,8 +81,8 @@ def get_GU_or_LKP(TokenVocab, tkidx2freq, channel= 'char',
     
     print('For channel: |', channel, '| build GrainUnique and LookUp')
     for idx, token in enumerate(LTU):
-        token_freq  = idx2freq[DTU[token]]
-        ChN = getChannelGrain4Token(token, channel, Max_Ngram = Max_Ngram, end_grain = end_grain)
+        token_freq  = tkidx2freq[DTU[token]]
+        ChN = getChannelGrain4Token(token, channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain)
         grain2number = dict(collections.Counter(ChN).most_common())
         for gr in grain2number:
             if gr in oldDGU:
