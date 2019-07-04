@@ -65,11 +65,11 @@ class BasicObject(object):
              Group2TextMethod, 
              Text2SentMethod, 
              Sent2TokenMethod, TOKENLevel, min_token_freq = 1,
-             use_hyper = False, Channel_Dep_Methods = Channel_Dep_Methods, Channel_Dep_TagSets = Channel_Dep_TagSets, 
+             use_hyper = [], Channel_Dep_Methods = Channel_Dep_Methods, Channel_Dep_TagSets = Channel_Dep_TagSets, 
              anno = False, anno_keywords = {}):
         
-        Channel_Dep_Methods = {} if not use_hyper else Channel_Dep_Methods
-        Channel_Dep_TagSets = {} if not use_hyper else Channel_Dep_TagSets
+        Channel_Dep_Methods = {i:k for i,k in Channel_Dep_Methods.items() if i in use_hyper} 
+        Channel_Dep_TagSets = {i:k for i,k in Channel_Dep_TagSets.items() if i in use_hyper} 
         
         ################################################################################################################
         corpus_name = CORPUSPath.split('/')[-2]
@@ -386,8 +386,8 @@ class BasicObject(object):
         with open(pickle_path, 'wb') as handle:
             # v is (LGU, DGU)
             pickle.dump(cls.TokenVocab, handle, protocol=4)
-            print(k + '\tis Dumped into file:', pickle_path)
-            print(k + '\tthe length of it is   :', len(cls.TokenVocab[0]))
+            print('token   ' + '\tis Dumped into file:', pickle_path)
+            print('token   ' + '\tthe length of it is   :', len(cls.TokenVocab[0]))
         
         channel_name_path = os.path.join(Path_Key, 'token.tsv')
         writeGrainList2File(channel_name_path, cls.TokenVocab[0])
@@ -573,9 +573,11 @@ class BasicObject(object):
         Data_Dir = cls.Data_Dir if not Data_Dir else Data_Dir
 
         # build the path key and the channel name
-        if not channel_name: 
-            print(Min_Ngram)
-            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, min_grain_freq = min_grain_freq, tagScheme = tagScheme)
+        if not channel_name:
+            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, 
+                                          min_grain_freq = min_grain_freq, tagScheme = tagScheme)
+        else:
+            channel, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme = getChannelName(channel = channel, channel_name = channel_name, style = 'extract')
 
         # build the Path_Key
         if channel not in cls.CONTEXT_IND_CHANNELS:
@@ -609,15 +611,17 @@ class BasicObject(object):
                     print('Error in:', channel_name_pickle)
 
     @classmethod
-    def getLookUp(cls, channel = None, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, channel_name = None,
-                  Data_Dir = None, min_grain_freq = 1, min_token_freq = None, **kwargs):
+    def getLookUp(cls, channel = None, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, min_grain_freq = 1, channel_name = None,
+                  Data_Dir = None,  min_token_freq = None, **kwargs):
 
         # find the Data_Dir
         Data_Dir = cls.Data_Dir if not Data_Dir else Data_Dir
 
-        # build the path key and the channel name
-        if not channel_name: 
-            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, min_grain_freq = min_grain_freq)
+        if not channel_name:
+            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, 
+                                          min_grain_freq = min_grain_freq, tagScheme = tagScheme)
+        else:
+            channel, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme = getChannelName(channel = channel, channel_name = channel_name, style = 'extract')
 
         # build the Path_Key
         min_token_freq = cls.min_token_freq if not min_token_freq else min_token_freq
@@ -656,9 +660,11 @@ class BasicObject(object):
         # find the Data_Dir
         Data_Dir = cls.Data_Dir if not Data_Dir else Data_Dir
         
-        # build the path key and the channel name
-        if not channel_name: 
-            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, min_grain_freq = min_grain_freq)
+        if not channel_name:
+            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, 
+                                          min_grain_freq = min_grain_freq, tagScheme = tagScheme)
+        else:
+            channel, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme = getChannelName(channel = channel, channel_name = channel_name, style = 'extract')
 
         # build the Path_Key
         min_token_freq = cls.min_token_freq if not min_token_freq else min_token_freq
