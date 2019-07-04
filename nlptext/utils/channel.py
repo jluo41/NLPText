@@ -3,10 +3,10 @@ import re
 import pickle
 import string
 from jieba import posseg
+import nltk
+
 import pyphen
 from .infrastructure import specialTokens
-
-
 
 ################## FOR THE CONTEXT-INDEPENDENT CHANNELS ################
 
@@ -227,11 +227,15 @@ posTag = ['a', 'ad', 'ag', 'an', 'b', 'c', 'd', 'df', 'dg', 'e', 'eng',
 
 def POSGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
     '''
+        # tokenLevel = 'word'
+            1: sent = '北京 是 中国 的 首都' # be cautious about this sentence, final segmentation may be different from the input
+            2: sent = '北京是中国的首都'     # this is ok
         Here only for Atom is Char Based
         This method should be enriched
         sent: List of Token(String), with or without Start or End
         sent: [str]
     '''
+    sent = sent.split(' ') 
     segs = list(posseg.cut(''.join(sent)))
     tokens = []
     GrainSent = []
@@ -259,11 +263,33 @@ def POSGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
             tokens.append(pair.word )
             # print(pair.word)
         return GrainSent, tokens
+
+
+posEnTag = ['LS', 'TO', 'VBN', "''", 'WP', 'UH', 'VBG', 'JJ', 'VBZ', '--', 
+            'VBP', 'NN', 'DT', 'PRP', ':', 'WP$', 'NNPS', 'PRP$', 'WDT', 
+            '(', ')', '.', ',', '``', '$', 'RB', 'RBR', 'RBS', 'VBD', 'IN', 
+            'FW', 'RP', 'JJR', 'JJS', 'PDT', 'MD', 'VB', 'WRB', 'NNP', 'EX',
+            'NNS', 'SYM', 'CC', 'CD', 'POS']
+
+def POSENGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
+    '''
+        Here only for Atom is Char Based
+        This method should be enriched
+        sent: List of Token(String), with or without Start or End
+        sent: [str]
+    '''
+    assert tokenLevel == 'word'
+    tokens = nltk.word_tokenize(sent)
+    # segs = list(posseg.cut(''.join(sent)))
+    GrainSent = [i[-1] +'-B' for i in nltk.pos_tag(tokens)]
+    return GrainSent, tokens
+
+
 ##################################################################
 
 ################################################################################################
 CONTEXT_IND_CHANNELS    = ['basic', 'medical', 'radical', 'token', 'char', 'subcomp', 'stroke', 'pinyin']
-CONTEXT_DEP_CHANNELS    = ['pos']
+CONTEXT_DEP_CHANNELS    = ['pos', 'pos_en']
 ANNO_CHANNELS           = ['annoR', 'annoE']
 
 CONTEXT_IND_CHANNELS_AB = ['b', 'm', 'r',  'T', 'C', 'c', 's', 'y']
@@ -286,8 +312,10 @@ Channel_Ind_Methods ={
     'phoneme': phonemeGrainToken, 
 }
 
-Channel_Dep_Methods = {'pos': POSGrainSent}
-Channel_Dep_TagSets = {'pos': posTag}
+Channel_Dep_Methods = {'pos': POSGrainSent, 
+                       'pos_en': POSENGrainSent}
+Channel_Dep_TagSets = {'pos': posTag, 
+                       'pos_en': posEnTag}
 
 
 ################################################################################################
@@ -319,21 +347,20 @@ def getChannelGrain4Token(token, channel, Ngram = None, Min_Ngram = 1, Max_Ngram
         print('The Channel "', channel, '" is not available currently!')
 
 
-
 def getChannelGrain4Sent(sent, channel, Ngram = None, Min_Ngram = 1, Max_Ngram = 1, tokenLevel = 'char', tagScheme =  'BIO', end_grain = False):
-    if channel in Channel_Ind_Methods:
-        return [getChannelGrain4Token(token, channel, Ngram, Min_Ngram, Max_Ngram, end_grain) for token in sent]
+    if channel == 'token':
+        return [[tk] for tk in sent.split(' ')]
+    elif channel in Channel_Ind_Methods:
+        return [getChannelGrain4Token(token, channel, Ngram, Min_Ngram, Max_Ngram, end_grain) for token in sent.split(' ')]
         # return grainSent_ctxInd(sent, channel, Ngram = Ngram, Max_Ngram = Max_Ngram,  end_grain = end_grain)
     elif channel in Channel_Dep_Methods:
-        return Channel_Dep_Methods[channel](sent, tokenLevel = tokenLevel, tagScheme = tagScheme)
+        return [[gr] for gr in Channel_Dep_Methods[channel](sent, tokenLevel = tokenLevel, tagScheme = tagScheme)[0]]
         # return grainSent_ctxDep(sent, Channel_Dep_Methods[channel], tokenLevel =tokenLevel, tagScheme = tagScheme, useStartEnd = useStartEnd)
     else:
         print('The Channel "', channel, '" is not available currently!')
 
 
 ###############################################################################################################
-from nlptext.utils.channel import CHANNEL_ABBR, CONTEXT_IND_CHANNELS
-
 
 ###############################################################################################################
 def getChannelName(channel, Min_Ngram = 1, Max_Ngram = 1,  end_grain = False, tagScheme = 'BIO', min_grain_freq = 1,

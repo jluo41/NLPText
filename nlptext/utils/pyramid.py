@@ -456,7 +456,7 @@ def clean_token(token):
 
 
 def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_Methods = {}):
-
+    # print(Channel_Dep_Methods)
     hyper_info = {}
 
     # seg_method is: 1 iter; 2 ' ' or '\t'; 3 'pos' or other channel that are in Channel_Dep_Methods
@@ -482,6 +482,7 @@ def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_M
         strTokens = final_tokens
 
     elif seg_method in Channel_Dep_Methods:
+        # print(Channel_Dep_Methods[seg_method])
         ch_grain_sent, strTokens = Channel_Dep_Methods[seg_method](sent, tokenLevel = tokenLevel, tagScheme = 'BIOES')
         # check and clean the token
         final_tokens = []
@@ -514,7 +515,7 @@ def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_M
 
     return strTokens, hyper_info
 
-
+#########################################################################33
 def get_line_with_position(path, start_position):
     with open(path, 'r', encoding = 'utf-8') as f:
         f.seek(start_position)

@@ -21,115 +21,26 @@ class Token(BasicObject):
             self._IdxTokenInSent = IdxTokenInSent
 
     # index: is the index in 
-    @property
-    def idx(self):
-        if self._token:
-            return self.TokenVocab[1].get(self._token, len(TokenVocab[1]))
-        else:
-            # remove this out 
-            start_position = self.start_position('token')
-            return self.TOKEN['ORIGTokenIndex'][self.Idx]
+    # @property
+    # def idx(self):
+    #     if self._token:
+    #         return self.TokenVocab[1].get(self._token, len(TokenVocab[1]))
+    #     else:
+    #         # remove this out 
+    #         start_position = self.start_position('token')
+    #         return self.TOKEN['ORIGTokenIndex'][self.Idx]
 
-    @property
-    def token(self):
-        if self._token:
-            return self._token
-        else:
-            # there is another quick method
-            # logic: get the sentence first, then get the token
-            return self.TokenUnique[0][self.index] # quick? or slow?
-
-    def getChannelGrain(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, channel_name = None):
-        if channel_name:
-            channel, Max_Ngram, tagScheme, end_grain = getChannelName(channel_name, style = 'extract')
-
-        if channel in self.CONTEXT_IND_CHANNELS:
-            return getChannelGrain4Token(self.token, channel, Max_Ngram = Max_Ngram, end_grain = end_grain)
-
-        else:
-            ##################################################################################### Speical Case for CTX_DEP
-            if not self._token:
-                try:
-                    LGU, DGU = self.getGrainUnique(channel, Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
-                    grain_idx = self.get_ctx_dep_grain(channel, tagScheme = tagScheme)
-                    return [LGU[grain_idx]]
-                except:
-                    print('\tIn Pyramid, there is no CTX_DEP channel:', channel, 'Turn to the orignal way... (tk.getChannelGrain)') 
-
-            channelGrain = self.Sentence.getChannelGrain(channel, Max_Ngram = Max_Ngram, tagScheme = tagScheme, useStartEnd = False, end_grain = end_grain)
-            return channelGrain[self.IdxTokenInSent]
-
-    def getGrainTensor(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, channel_name = None,
-                       TokenNum_Dir = None, 
-                       TU = None, GU = None, LKP = None, dontUseLookUp = False):
-        if channel == 'token':
-            if TU:
-                LTU, DTU = TU
-                return [DTU.get(self.token, UNK_ID)], 1
-            elif TokenNum_Dir:
-                LTU, DTU = self.getGrainUnique(channel, TokenNum_Dir =TokenNum_Dir)
-                return [DTU.get(self.token, UNK_ID)], 1
-            else:
-                return [self.index], 1
-
-        if not channel_name:
-            channel_name = getChannelName(channel, Max_Ngram = Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
-
-        ########################################################################## Speical Case for IND and DEP
-        if channel in self.CONTEXT_IND_CHANNELS and not dontUseLookUp:
-            ####################################################################### LookUp Table
-            try:
-                if TU and LKP: 
-                    LOOKUP = LOOKUP
-                    LTU, DTU = TU
-                else:
-                    LOOKUP, TokenUnqiue = self.getLookUp(channel_name = channel_name, TokenNum_Dir = TokenNum_Dir)
-                    LTU, DTU = TokenUnqiue
-                
-                index = DTU.get(self.token, UNK_ID) if TokenNum_Dir else self.index
-                if index != UNK_ID:
-                    info = LOOKUP[index]
-                    leng = len(info)
-                    return info, leng
-                else:
-                    # deal with the token which is out of the vocabary. 
-                    # left it in the last part
-                    pass
-            except:
-                print('\tNo LookUp Table is found for channel:  ', channel_name, 'Turn to the orignal way... (tk.getGrainTensor)')
-            ####################################################################### LookUp Table
-                
-        elif channel not in self.CONTEXT_IND_CHANNELS and not self._token:
-            ####################################################################### In Pyramid
-            try:
-                info = [self.get_ctx_dep_grain(channel, tagScheme = tagScheme, TokenNum_Dir = TokenNum_Dir, GU = GU)] # based on cls.TOKEN
-                return info, 1
-            except:
-                print('\tIn Pyramid, there is no CTX_DEP channel:', channel, 'Turn to the orignal way... (tk.getGrainTensor)') 
-            ####################################################################### In Pyramid
-        ########################################################################## Speical Case for IND and DEP
-
-
-        ########################################################################################################
-        # option 2: 
-        ### case 1: deal with the case: CTX_IND channel and this channel doesn't have LOOKUP.p or the token is an UNK
-        ### case 2: deal with the case: CTX_DEP channel and ANNO_CHANNEL which not in pyramid.
-        LGU, DGU = self.getGrainUnique(channel, channel_name = channel_name, TokenNum_Dir =TokenNum_Dir)
-        info = [DGU.get(i, UNK_ID) for i in self.getChannelGrain(channel, Max_Ngram = Max_Ngram, 
-                                                                 end_grain = end_grain, tagScheme = tagScheme)]
-        leng = len(info)
-        return info, leng
-        ########################################################################################################
-
-    def get_ctx_dep_grain(self, channel, tagScheme, TokenNum_Dir = None, GU = None):
-        Idx = self.Idx
-        try:
-            return self.CTX_DEP_TMP[channel+tagScheme][Idx]
-        except:
-            self.Sentence.build_ctx_dep_grain(channel, tagScheme, TokenNum_Dir = TokenNum_Dir, GU = GU, to_tmp = True)
-            return self.CTX_DEP_TMP[channel+tagScheme][Idx]
+    # @property
+    # def token(self):
+    #     if self._token:
+    #         return self._token
+    #     else:
+    #         # there is another quick method
+    #         # logic: get the sentence first, then get the token
+    #         return self.TokenUnique[0][self.index] # quick? or slow?
 
     def start_position(self, channel):
+        # the byte idx where this token's sentence starts from.
         # Idx = self.IdxText
         start_position = self.SENT[self.Channel_Hyper_Path[channel]][self.IdxText-1] if self.IdxText != 0 else 0
         return start_position
