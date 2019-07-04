@@ -42,7 +42,7 @@ class Text(BasicObject):
     def get_stored_hypertagscheme(self, channel, tagScheme):
         # here channel should exclude token
         grain_idx = re.split(' |\n', self.get_stored_hyper(channel))
-        bioes2tag = self.getTRANS(channel, tagScheme)
+        bioes2tag = self.getTrans(channel, tagScheme)
         # GV = self.getGrainVocab(channel, tagScheme)
         # shall we check its insanity?
         return [bioes2tag[vocidx] for vocidx in grain_idx]

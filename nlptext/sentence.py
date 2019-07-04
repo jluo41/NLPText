@@ -21,6 +21,7 @@ class Sentence(BasicObject):
     def __init__(self, Idx = None, sentence = None, tokenLevel = None):
         # Idx is the location index
         self.Idx = Idx
+        # the sentence must be split with spaces
         if sentence:
             self._sentence = sentence # could be a string, or a list of token string.
         if tokenLevel:
@@ -32,7 +33,7 @@ class Sentence(BasicObject):
             if type(self._sentence) == str:
                 return self._sentence
             elif type(self._sentence) == list:
-                return ''.join(self._sentence)
+                return ' '.join(self._sentence)
         else:
             return self.get_stored_hyper('token')
 
@@ -44,8 +45,7 @@ class Sentence(BasicObject):
     def get_stored_hypertagscheme(self, channel, tagScheme):
         # here channel should exclude token
         grain_idx = re.split(' |\n', self.get_stored_hyper(channel))
-        bioes2tag = self.getTRANS(channel, tagScheme)
-        # GV = self.getGrainVocab(channel, tagScheme)
+        bioes2tag = self.getTrans(channel, tagScheme)
         # shall we check its insanity?
         return [bioes2tag[vocidx] for vocidx in grain_idx]
 
@@ -54,118 +54,123 @@ class Sentence(BasicObject):
         grain_idx = self.get_stored_hypertagscheme(channel, tagScheme)
         return [vocidx2grain[vocidx] for vocidx in grain_idx]
 
-    def get_grain_str(self, channel,  Max_Ngram = 1, tagScheme = 'BIO',  useStartEnd = False, end_grain = False):
-        channelToken = 'ANNOTokenIndex' if 'anno' in  channel else channel + 'TokenIndex'
+    def get_grain_str(self, channel, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, min_grain_freq = 1, tagScheme = 'BIO',  channel_name = None):
+        # channelToken = 'ANNOTokenIndex' if 'anno' in  channel else channel + 'TokenIndex'
         
         if channel == 'token':
-            channelGrain = [[tk.token] for tk in self.Tokens]
-        
-        elif channelToken in self.TOKEN and not self._sentence:
-            LGU, DGU = self.getGrainUnique(channel, Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
-            channel_grain_index = self.build_ctx_dep_grain(channel, tagScheme)
-            channelGrain = [[LGU[i]] for i in channel_grain_index]
-
-        else:
-            sent = [tk.token for tk in self.Tokens] # using `self.Tokens` is better.
-            tokenLevel = self._tokenLevel if self._tokenLevel else self.TOKEN['TOKENLevel']
-            channelGrain =  getChannelGrain4Sent(sent, channel, Max_Ngram = Max_Ngram, tokenLevel = tokenLevel, 
-                                                 tagScheme  = tagScheme, useStartEnd= False, end_grain = end_grain)
-
-        if useStartEnd:
-            return [[START]] + channelGrain + [[END]]
-        else:
+            channelGrain = [[tk] for tk in self.sentence.split(' ')]
             return channelGrain
 
-    def get_grain_idx(self, channel, Max_Ngram = 1, tagScheme = 'BIO', end_grain = False, channel_name = None, 
-                       useStartEnd = False, 
-                       TokenNum_Dir = None, # from TokenNum_Dir, we get TU, GU, and LKP
-                       TU = None, GU = None, LKP = None, dontUseLookUp = False):
+
+        if not channel_name:
+            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, 
+                                          min_grain_freq = min_grain_freq, tagScheme = tagScheme)
+        else:
+            channel, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme = getChannelName(channel = channel, channel_name = channel_name, style = 'extract')
+
+
+        if not self._sentence and channel in self.Channel_Hyper_Path:
+            channelGrain = [[tk] for tk in self.get_stored_hyperstring(channel, tagScheme)]
+            return channelGrain
+
+        else:
+            # sent = self.sentence.split(' ')
+            tokenLevel = self._tokenLevel if self._tokenLevel else self.TOKEN['TOKENLevel']
+            # the sentence input is separated by spaces
+            channelGrain =  getChannelGrain4Sent(self.sentence, channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, 
+                                                 end_grain = end_grain, tagScheme  = tagScheme, tokenLevel = tokenLevel)
+
+            return channelGrain
+
+    def get_grain_idx(self, channel, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, min_grain_freq = 1, tagScheme = 'BIO', channel_name = None, 
+                      TU = None, GU = None, LKP = None, Data_Dir = None):
 
         if channel == 'token':
-            # deal with the token first, this is a special channel and we need deal with it first.
-            if TU:
-                LTU, DTU = TU
-                info = [[DTU.get(tk.token, UNK_ID)] for tk in self.Tokens]
-            elif TokenNum_Dir:
-                LTU, DTU = self.getGrainUnique(channel, TokenNum_Dir =TokenNum_Dir)
-                info = [[DTU.get(tk.token, UNK_ID)] for tk in self.Tokens]
-            else:
-                info = [[tk.index] for tk in self.Tokens]
-            if useStartEnd:
-                info = [[START_ID]] + [info] + [[END_ID]]
+            # find the TU at the first time
+            if not TU:
+                if not Data_Dir:
+                    TU = self.TokenVocab
+                else:
+                    TU = self.getGrainVocab('token', Data_Dir = Data_Dir)
+
+            LTU, DTU = TU
+            unk_id = len(DTU)
+            info = [[DTU.get(tk, unk_id)] for tk in self.sentence.split(' ')]
             leng_st = len(info)
             leng = [1] * leng_st
             return info, leng_st, leng, 1
 
+
         if not channel_name:
-            channel_name = getChannelName(channel, Max_Ngram = Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
+            channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, 
+                                          min_grain_freq = min_grain_freq, tagScheme = tagScheme)
+        else:
+            channel, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme = getChannelName(channel = channel, channel_name = channel_name, style = 'extract')
 
-        ########################################################################## Speical Case for IND and DEP
-        if channel in self.CONTEXT_IND_CHANNELS and not dontUseLookUp:
-            ####################################################################### LookUp Table
-            try:
-                sent = self.Tokens # using `self.Tokens` is better.
-                info_leng = [tk.getGrainTensor(channel, Max_Ngram, end_grain = end_grain, tagScheme = tagScheme, 
-                                               TokenNum_Dir =TokenNum_Dir, # token and sentence are mostly the same
-                                               TU = TU, GU = GU, LKP = LKP, dontUseLookUp = dontUseLookUp) for tk in sent]
-                info    = [i[0] for i in info_leng]
-                leng_tk = [i[1] for i in info_leng]
-                info, leng_st, leng_tk, max_gr = self.padding_info(info, leng_tk, useStartEnd = useStartEnd)
-                return info, leng_st, leng_tk, max_gr
-            except:
-                # this is no LookUp Table, go to use the original way.
-                print('\tNo LookUp Table is found for channel:  ', channel_name, 'Turn to the orignal way... (st.getGrainTensor)')
-            ####################################################################### LookUp Table
+        
+        if channel in self.Channel_Hyper_Path:
+            if not GU: GU = self.getGrainVocab(channel, channel_name = channel_name, Data_Dir =Data_Dir)
+            LGU, DGU = GU
+            unk_id = len(DGU)
 
-        elif channel not in self.CONTEXT_IND_CHANNELS and not self._sentence:
-            try:
-                info    = self.build_ctx_dep_grain(channel, tagScheme, TokenNum_Dir = TokenNum_Dir, GU = GU)
-                info    = [[i] for i in info]
+            if not self._sentence: 
+                info = [[tk] for tk in self.get_stored_hypertagscheme(channel, tagScheme)]
+                leng_st = len(info)
+                leng = [1] * leng_st
+                return info, leng_st, leng, 1
+            else:
+                info = self.get_grain_str(channel, channel_name = channel_name)
+                info = [[DGU.get(gr, unk_id) for gr in tk] for tk in info]
                 info, leng_st, leng_tk, max_gr = self.padding_info(info, useStartEnd = useStartEnd)
                 return info, leng_st, leng_tk, max_gr
-            except:
-                print('\tIn Pyramid, there is no CTX_DEP channel:', channel, 'Turn to the orignal way... (st.getGrainTensor)') 
-        ########################################################################## Speical Case for IND and DEP
-        # option 2: 
-        ### case 1: deal with the case: CTX_IND channel and this channel doesn't have LOOKUP.p
-        ### case 2: deal with the case: CTX_DEP channel and ANNO_CHANNEL
-        if GU: 
+
+        else: 
+
+            if not GU: GU = self.getGrainVocab(channel, channel_name = channel_name, Data_Dir =Data_Dir)
             LGU, DGU = GU
-        else:
-            LGU, DGU = self.getGrainUnique(channel, channel_name = channel_name, TokenNum_Dir =TokenNum_Dir)
+            unk_id = len(LGU)
 
-        info = self.getChannelGrain(channel, Max_Ngram = Max_Ngram, tagScheme = tagScheme,  
-                                    useStartEnd = False, end_grain = end_grain)
-        info = [[DGU.get(gr, UNK_ID) for gr in tk] for tk in info]
-        
-        info, leng_st, leng_tk, max_gr = self.padding_info(info, useStartEnd = useStartEnd)
-        return info, leng_st, leng_tk, max_gr
+            if not (LKP and TU):
+                try:
+                    LKP, TU = self.getLookUp(channel, channel_name = channel_name, Data_Dir = Data_Dir)
+                except:
+                    pass
+
+            if (LKP and TU):
+                sentence_tokens = self.sentence.split(' ')
+                LTU, DTU = TU
+                unk_id = len(DTU)
+
+                # print(len(LTU))
+                # print(len(DTU))
+                tk_voc_info = [DTU.get(tk, unk_id) for tk in self.sentence.split(' ')]
+                info = []
+                for idx, tk_voc in enumerate(tk_voc_info):
+                    if tk_voc != unk_id:
+                        info.append(LKP[tk_voc])
+                    else:
+                        # deal with the low freq words
+                        token_str = sentence_tokens[idx]
+                        grains = getChannelGrain4Token(token, channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain)
+                        info.append([DGU.get(gr, unk_id) for gr in grains])
+
+                info, leng_st, leng_tk, max_gr = self.padding_info(info)
+                return info, leng_st, leng_tk, max_gr
+            else:
+                info = self.get_grain_str(channel, channel_name = channel_name)
+                info = [[DGU.get(gr, unk_id) for gr in tk] for tk in info]
+                info, leng_st, leng_tk, max_gr = self.padding_info(info)
+                return info, leng_st, leng_tk, max_gr
+
     
-    def padding_info(self, info, leng_tk = None, useStartEnd = True):
-        if not leng_tk:
-            leng_tk = [len(i) for i in info]
-        if useStartEnd:
-            info = [[START_ID]] + [info] + [[END_ID]]
-            leng_tk = [1] + leng_tk + [1]
-
+    def padding_info(self, info, leng_tk = None):
+        if not leng_tk: leng_tk = [len(i) for i in info]
         leng_st = len(info)
         max_gr  = max(leng_tk)
         info_final =np.zeros([leng_st, max_gr], dtype=int)
-        
         info = [tk + [0] * (max_gr - len(tk)) for tk in info] 
-        
         return info, leng_st, leng_tk, max_gr
         
-    def build_ctx_dep_grain(self, channel, tagScheme, Data_Dir = None, GU = None, to_tmp = False):
-        channelToken = 'ANNOTokenIndex' if 'anno' in  channel else channel + 'TokenIndex'
-        s, e = self.IdxTokenStartEnd
-        bioes_grain_index = self.TOKEN[channelToken][s:e]
-        bioes2tag = self.get_BIOES_Trans(channel, tagScheme, Data_Dir = Data_Dir, GU = GU)
-        channel_grain_index = [bioes2tag[gr_idx] for gr_idx in bioes_grain_index]
-        # if to_tmp:
-        #     self.CTX_DEP_TMP[channel+tagScheme] = {s+i:gr_idx for i, gr_idx in enumerate(channel_grain_index)}
-        return channel_grain_index
-
     @property 
     def IdxCorpus(self):
         return bisect(self.CORPUS['EndIDXFolders'] , self.IdxFolder)
