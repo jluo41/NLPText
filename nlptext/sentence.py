@@ -144,28 +144,26 @@ class Sentence(BasicObject):
     def padding_info(self, info, leng_tk = None, useStartEnd = True):
         if not leng_tk:
             leng_tk = [len(i) for i in info]
-
         if useStartEnd:
             info = [[START_ID]] + [info] + [[END_ID]]
             leng_tk = [1] + leng_tk + [1]
 
         leng_st = len(info)
         max_gr  = max(leng_tk)
-        
         info_final =np.zeros([leng_st, max_gr], dtype=int)
         
         info = [tk + [0] * (max_gr - len(tk)) for tk in info] 
         
         return info, leng_st, leng_tk, max_gr
         
-    def build_ctx_dep_grain(self, channel, tagScheme, TokenNum_Dir = None, GU = None, to_tmp = False):
+    def build_ctx_dep_grain(self, channel, tagScheme, Data_Dir = None, GU = None, to_tmp = False):
         channelToken = 'ANNOTokenIndex' if 'anno' in  channel else channel + 'TokenIndex'
         s, e = self.IdxTokenStartEnd
         bioes_grain_index = self.TOKEN[channelToken][s:e]
-        bioes2tag = self.get_BIOES_Trans(channel, tagScheme, TokenNum_Dir = TokenNum_Dir, GU = GU)
+        bioes2tag = self.get_BIOES_Trans(channel, tagScheme, Data_Dir = Data_Dir, GU = GU)
         channel_grain_index = [bioes2tag[gr_idx] for gr_idx in bioes_grain_index]
-        if to_tmp:
-            self.CTX_DEP_TMP[channel+tagScheme] = {s+i:gr_idx for i, gr_idx in enumerate(channel_grain_index)}
+        # if to_tmp:
+        #     self.CTX_DEP_TMP[channel+tagScheme] = {s+i:gr_idx for i, gr_idx in enumerate(channel_grain_index)}
         return channel_grain_index
 
     @property 
