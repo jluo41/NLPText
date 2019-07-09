@@ -420,8 +420,11 @@ class BasicObject(object):
     @classmethod
     def _buildGVforToken(cls, max_vocab_token_num = None, min_token_freq = 1):
         # both two inputs are valid
-        if min_token_freq == cls.min_token_freq:
-            return cls.TokenVocab 
+        try:
+            if min_token_freq == cls.min_token_freq:
+                return cls.TokenVocab 
+        except:
+            cls.min_token_freq = min_token_freq
 
         if min_token_freq < cls.min_token_freq:
             # reset all token vocab from disk
@@ -474,7 +477,7 @@ class BasicObject(object):
         cls.VOCAB[Path_Key] = cls.VOCAB[Path_Key] if Path_Key in cls.VOCAB else {}
         channel_name_pickle = os.path.join(Path_Key, channel_name + '.voc')
         GrainVocab = readPickleFile2GrainUnique(channel_name_pickle)
-        cls.VOCAB[Data_Dir][channel_name] = GrainVocab
+        cls.VOCAB[Path_Key][channel_name] = GrainVocab
         return GrainVocab 
 
     @classmethod
@@ -486,7 +489,14 @@ class BasicObject(object):
         print(channel, Max_Ngram, end_grain, tagScheme)
         
         ch = 'annoE' if 'annoR' == channel else channel
-        BIOES_GU = cls.getGrainVocab(ch, tagScheme = 'BIOES') # cautions: must get the corresponding base GU.
+        # this many fall into loops
+        # BIOES_GU = cls.getGrainVocab(ch, tagScheme = 'BIOES') # cautions: must get the corresponding base GU.
+        try:
+            # generall, we hope this can give us results.
+            BIOES_GU = cls._getGVfromVocab(Path_Key, ch + '-bioes')
+        except:
+            BIOES_GU = cls._getGVfromDisk(Path_Key, ch + '-bioes')
+
         BIOES_GU_neat = BIOES_GU[0]
 
         LGU_neat = list(set([trans_bioesTag(channel, i, tagScheme) for i in BIOES_GU_neat]))
@@ -619,7 +629,7 @@ class BasicObject(object):
 
         if not channel_name:
             channel_name = getChannelName(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, 
-                                          min_grain_freq = min_grain_freq, tagScheme = tagScheme)
+                                          min_grain_freq = min_grain_freq)
         else:
             channel, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme = getChannelName(channel = channel, channel_name = channel_name, style = 'extract')
 
@@ -726,12 +736,14 @@ class BasicObject(object):
         for channel in cls.CHANNEL_SETTINGS:
             print('Deal with the Channel:', channel)
             channel_setting = cls.CHANNEL_SETTINGS[channel]
+            Min_Ngram    = channel_setting.get('Min_Ngram', 1)
             Max_Ngram    = channel_setting.get('Max_Ngram', 1)
             end_grain    = channel_setting.get('end_grain', False)
             tagScheme    = channel_setting.get('tagScheme', 'BIO')
+            min_grain_freq = channel_setting.get('min_grain_freq', 1)
             print('Current Channel is       ', '\t', channel)
             print('Current Channel Max_Ngram', '\t', Max_Ngram)
-            cls.getGrainVocab(channel, Max_Ngram, end_grain = end_grain, tagScheme = tagScheme)
+            cls.getGrainVocab(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, tagScheme = tagScheme, min_grain_freq = min_grain_freq)
     
 
 def convert_Char_2_Word_BasicObject(BasicObject, use_channel = 'pos', MaxTokenUnique = False):
