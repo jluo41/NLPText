@@ -21,8 +21,8 @@ class Corpus(BasicObject):
     @property 
     def IdxFolderStartEnd(self):
         s, e = self.Idx, self.Idx + 1
-        s = self.CORPUS['EndIDXFolders'][s-1] if s != 0 else 0
-        e = self.CORPUS['EndIDXFolders'][e-1]
+        s = self.CORPUS['EndIDXGroups'][s-1] if s != 0 else 0
+        e = self.CORPUS['EndIDXGroups'][e-1]
         return s, e 
     
     @property

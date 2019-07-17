@@ -1,11 +1,12 @@
 import os
+import logging
 from bisect import bisect
 import numpy as np
 
 from .base import BasicObject
 from .token import Token
 
-from .utils.channel import getChannelGrain4Sent, getChannelName
+from .utils.channel import getChannelGrain4Sent, getChannelGrain4Token, getChannelName
 from .utils.pyramid import segSent2Tokens, get_line_with_position
 from .utils.infrastructure import START, END, START_ID, END_ID, UNK_ID
 import re 
@@ -47,7 +48,10 @@ class Sentence(BasicObject):
         grain_idx = re.split(' |\n', self.get_stored_hyper(channel))
         bioes2tag = self.getTrans(channel, tagScheme)
         # shall we check its insanity?
-        return [bioes2tag[vocidx] for vocidx in grain_idx]
+        try:
+            return [bioes2tag[vocidx] for vocidx in grain_idx]
+        except:
+            print(grain_idx)
 
     def get_stored_hyperstring(self, channel, tagScheme):
         vocidx2grain = self.getGrainVocab(channel, tagScheme = tagScheme)[0]
@@ -151,7 +155,8 @@ class Sentence(BasicObject):
                     else:
                         # deal with the low freq words
                         token_str = sentence_tokens[idx]
-                        grains = getChannelGrain4Token(token, channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain)
+                        print(token_str) # TODO: remove this to log
+                        grains = getChannelGrain4Token(token_str, channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain)
                         info.append([DGU.get(gr, unk_id) for gr in grains])
 
                 info, leng_st, leng_tk, max_gr = self.padding_info(info)

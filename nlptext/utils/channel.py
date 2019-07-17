@@ -235,7 +235,8 @@ def POSGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
         sent: List of Token(String), with or without Start or End
         sent: [str]
     '''
-    sent = sent.split(' ') 
+    if type(sent) == str:
+        sent = sent.split(' ') 
     segs = list(posseg.cut(''.join(sent)))
     tokens = []
     GrainSent = []
@@ -293,7 +294,7 @@ CONTEXT_DEP_CHANNELS    = ['pos', 'pos_en']
 ANNO_CHANNELS           = ['annoR', 'annoE']
 
 CONTEXT_IND_CHANNELS_AB = ['b', 'm', 'r',  'T', 'C', 'c', 's', 'y']
-CONTEXT_DEP_CHANNELS_AB = ['P']
+CONTEXT_DEP_CHANNELS_AB = ['P', 'Pe']
 ANNO_CHANNELS_AB        = ['R', 'E']
 
 CHANNEL_ABBR = dict(zip(CONTEXT_IND_CHANNELS + CONTEXT_DEP_CHANNELS+ANNO_CHANNELS , 
