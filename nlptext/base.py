@@ -161,17 +161,22 @@ class BasicObject(object):
 
                 # skip the sents that are empty and the sents which doesn't have annotations.
                 if len(strSents) == 0 or (anno and len(SSETText) == 0): continue
-                    
+                tokenizedSents = []
                 # the following to blocks deal with multiple hyperfields (include token and annoE) for each strSent in strSents
                 # the main input are strText and strSents, (especially strSents)
                 
                 # block 1: for token and other hyper fields.
-                for strSent in strSents:
+                for idx, strSent in enumerate(strSents):
                     # the following block deals with each strSent in a text.
                     # if strTags is not None, strTokens and strTags share the same length, 
                     # and this should be assert inside segSent2Tokens
-                    # strTokens = segSent2Tokens(strSent, method = Sent2TokenMethod)
+                    
+                    # should assert [' ' not in strToken for strToken in strTokens]
+                    # and len(hyper_info) == len(strTokens)
                     strTokens, hyper_info = segSent2Tokens(strSent, Sent2TokenMethod, TOKENLevel, Channel_Dep_Methods)
+
+                    # LESSION: update strSents, which will be used in annotation.
+                    tokenizedSents.append(strTokens)
                     # deal with tokens
                     for token in strTokens:
                         # the following block deals with each token in a text.
@@ -233,12 +238,17 @@ class BasicObject(object):
 
                     # it will check strText and SSET inside getCITText
                     CITText  = getCITText(strText, SSETText, TOKENLevel) 
+                    
                     # get CITSents
-                    CITSents = getCITSents(strSents, CITText, TOKENLevel)
+                    CITSents = getCITSents(tokenizedSents, CITText, TOKENLevel)
                     
                     for sentIdx, CITSent in enumerate(CITSents):
                         anno_tags = [CITToken[2] for CITToken in CITSent]
                         anno_tags = [str(cls.VOCAB[Path_Key]['annoE-bioes'][1][i]) for i in anno_tags]
+
+                        # make sure anno seq is equal to token seq
+                        assert len(anno_tags) == len(tokenizedSents[sentIdx])
+                        
                         with open(cls.Channel_Hyper_Path['annoE'], 'a') as f:
                             line_sentence = ' '.join(anno_tags) + '\n'
                             f.write(line_sentence)

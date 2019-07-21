@@ -445,6 +445,7 @@ def segText2Sents(text, method = 'whole', **kwargs):
 
 def clean_token(token):
     # token contains no spaces.
+    # what is token is a white splace itself?
     token = token.replace(' ', '').replace('\n', '').replace('\t', '')
 
     # punctuation must be seperated away from token.
@@ -500,7 +501,13 @@ def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_M
         hyper_info[seg_method] = ch_grain_sent
 
     else:
-        raise('No good segmentaion method...')
+        raise ValueError('No good segmentaion method...')
+
+
+    # remove ' ' inside strToken
+    # in this case, ' ' will not be a token, we will solve this problem in the future.
+    # how about, in Chinese, the ' ' between English words.
+    # TODO
 
     # in general, we only use it for Chinese Char, and won't for Chinese Word
     # actually, we can also use it for English Word. but English char is too verbose.
@@ -512,6 +519,7 @@ def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_M
         # this assert should be inside the hyper_field_method
         # assert len(ch_grain_sent) == len(final_tokens)
         hyper_info[ch] = ch_grain_sent
+        assert len(ch_grain_sent) == len(ch_grain_sent)
 
     return strTokens, hyper_info
 

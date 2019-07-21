@@ -64,28 +64,33 @@ def getCITText(strText, SSETText, TOKENLevel='char'):
         # print(CITText)
     return CITText
 
-def getCITSents(strSents, CITText, TOKENLevel='char'):
+def getCITSents(tokenizedSents, CITText, TOKENLevel='char'):
     # if TOKENLevel == 'char':
-    if TOKENLevel == 'word':
-        strSents = [strSent.split(' ') for strSent in strSents]
+
+    # if TOKENLevel == 'word':
+    #     strSents = [tokenizedSent.split(' ') for tokenizedSent in tokenizedSents]
     # print('\nin strSents\n')
     # print(strSents)
     # print(CITText)
     lenLastSent = 0
     collapse    = 0 # don't need to move 
     CITSents = []
-    for strSent in strSents:
+    for tokenizedSent in tokenizedSents:
+
         CITSent = []
-        for sentTokenIdx, c in enumerate(strSent):
+        for sentTokenIdx, c in enumerate(tokenizedSent):
             # sentTokenIdx = txtTokenIdx - lenLastSent - collapse
             txtTokenIdx = sentTokenIdx + lenLastSent + collapse
             cT, _, tT = CITText[txtTokenIdx]
             while c != cT and c != ' ':
+                # print(c, cT)
                 collapse = collapse + 1
                 txtTokenIdx = sentTokenIdx + lenLastSent + collapse
+                if txtTokenIdx >= len(CITText):
+                    raise ValueError('You cannot find a good token!')
                 cT, _, tT = CITText[txtTokenIdx]
-            CITSent.append([c,sentTokenIdx, tT])
-        lenLastSent = lenLastSent + len(strSent)
+            CITSent.append([c, sentTokenIdx, tT])
+        lenLastSent = lenLastSent + len(tokenizedSent)
         CITSents.append(CITSent)
     # CITSents
     # Here we get CITSents  
