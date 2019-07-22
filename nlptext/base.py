@@ -674,8 +674,8 @@ class BasicObject(object):
                 return None
 
     @classmethod
-    def getFreq(cls, channel = None, Min_Ngram = 1, Max_Ngram = 1, end_grain = False,min_grain_freq = 1,  tagScheme = 'BIO', channel_name = None,
-                  Data_Dir = None, min_token_freq = None, **kwargs):
+    def getFreq(cls, channel = None, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, channel_name = None,
+                  Data_Dir = None, min_grain_freq = 1, min_token_freq = None, **kwargs):
 
         # find the Data_Dir
         Data_Dir = cls.Data_Dir if not Data_Dir else Data_Dir

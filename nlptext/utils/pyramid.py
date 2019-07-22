@@ -418,7 +418,7 @@ def segText2Sents(text, method = 'whole', **kwargs):
     if method == 'whole':
         # this is commonly used for wikipedia data
         # for English corpus, we use this only.
-        sents = [text]
+        sents = [text.replace('\\n', '').replace('\n', '').replace(' ', '').replace('\t', '').replace('\xa0', '')]
 
     elif method == 're':
         # re still need more method to consider the final results.
