@@ -76,9 +76,9 @@ def annofile4text(strText, folderPath, origTextName, fileNames, ORIGIden, ANNOId
 
 anno = 'annofile4sent'
 anno_keywords = {
-    'ANNOIden': '.NER',
+    'ANNOIden': '.UMLSTag',
     'anno_sep' : '\t', 
-    'notZeroIndex' : 1, 
+    'notZeroIndex' : 0, 
     'notRightOpen' : 0,
 }
 

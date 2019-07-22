@@ -28,14 +28,15 @@ class Corpus(BasicObject):
     @property
     def IdxTextStartEnd(self):
         s, e = self.IdxFolderStartEnd
-        s = self.FOLDER['EndIDXTexts'][s-1] if s != 0 else 0
-        e = self.FOLDER['EndIDXTexts'][e-1]
+        s = self.GROUP['EndIDXTexts'][s-1] if s != 0 else 0
+        e = self.GROUP['EndIDXTexts'][e-1]
         return s, e 
 
     @property
     def IdxSentStartEnd(self):
         s, e = self.IdxTextStartEnd
         s = self.TEXT['EndIDXSents'][s-1] if s != 0 else 0
+        # print(e-1)
         e = self.TEXT['EndIDXSents'][e-1]
         return s, e 
 
@@ -47,7 +48,7 @@ class Corpus(BasicObject):
         return s, e 
 
     @property
-    def Folders(self):
+    def Groups(self):
         return [Folder(Idx)   for Idx in range(*self.IdxFolderStartEnd)]
     
     @property
