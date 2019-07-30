@@ -181,7 +181,7 @@ anno_keywords = {
     'anno_sep': '\t',
     'connector': '',
     'suffix': False,
-    'change_tags': False, 
+    'change_tags': False, # If False, B, I, I, I, ...; If True: I, I, B, ...
 }
 
 def textBlockReader(folderPath, fileNames, anno = 'conll_block', change_tags = False, 
@@ -202,18 +202,18 @@ def textBlockReader(folderPath, fileNames, anno = 'conll_block', change_tags = F
                 strText = connector.join(strText)
                 
                 # print(CIT)
+                # this is used to deal with conll-2003 only.
                 if change_tags:
-
                     TotalCIT = [[ct[0], idx, ct[-1]] for idx, ct in enumerate(L)]
                     # print(TotalCIT)
                     for idx, cit in enumerate(TotalCIT):
                         currentTag = cit[-1]
+                        lastTag = TotalCIT[idx - 1][-1] if idx > 1 else 'O'
                         if 'I-' not in currentTag:
                             continue
-                        lastTag = TotalCIT[idx - 1][-1] if idx > 1 else 'null'
-                        if currentTag != lastTag:
+                        # lastTag = TotalCIT[idx - 1][-1] if idx > 1 else 'null'
+                        if lastTag == 'O' and 'I-' in currentTag:
                             TotalCIT[idx][-1] = cit[-1].replace('I-', 'B-')
-
                     L = TotalCIT
 
                 CIT = [[ct[0], idx, ct[-1]] for idx, ct in enumerate(L) if ct[-1] != 'O']
@@ -418,7 +418,8 @@ def segText2Sents(text, method = 'whole', **kwargs):
     if method == 'whole':
         # this is commonly used for wikipedia data
         # for English corpus, we use this only.
-        sents = [text.replace('\\n', '').replace('\n', '').replace(' ', '').replace('\t', '').replace('\xa0', '')]
+        # sents = [text.replace('\\n', '').replace('\n', '').replace(' ', '').replace('\t', '').replace('\xa0', '')]
+        sents = [text.replace('\\n', '').replace('\n', '').replace('\t', '')]
 
     elif method == 're':
         # re still need more method to consider the final results.
@@ -511,6 +512,7 @@ def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_M
 
     # in general, we only use it for Chinese Char, and won't for Chinese Word
     # actually, we can also use it for English Word. but English char is too verbose.
+    # print(strTokens)
     for ch, hyper_method in Channel_Dep_Methods.items():
         if ch == seg_method:
             continue
@@ -519,7 +521,7 @@ def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_M
         # this assert should be inside the hyper_field_method
         # assert len(ch_grain_sent) == len(final_tokens)
         hyper_info[ch] = ch_grain_sent
-        assert len(ch_grain_sent) == len(ch_grain_sent)
+        assert len(strTokens) == len(ch_grain_sent)
 
     return strTokens, hyper_info
 

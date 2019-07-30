@@ -280,7 +280,10 @@ def POSENGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
         sent: [str]
     '''
     assert tokenLevel == 'word'
-    tokens = nltk.word_tokenize(sent)
+    if type(sent) == list:
+        tokens = sent
+    else:
+        tokens = nltk.word_tokenize(sent)
     # segs = list(posseg.cut(''.join(sent)))
     GrainSent = [i[-1] +'-B' for i in nltk.pos_tag(tokens)]
     return GrainSent, tokens

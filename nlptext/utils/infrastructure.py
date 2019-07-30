@@ -150,6 +150,29 @@ def trans_charLabels_to_wordLabels(string, join_char = '*'):
 
 ############### PART OTHERS
 
+def extractSET(tag_seq, exist_SE = False):
+    '''
+        SET: start, end, tag
+        tag_seq: the hyper field sequence for this sentence
+    '''
+    if exist_SE:
+        tag_seq = tag_seq[1:-1]
+
+    IT = list(zip(range(len(tag_seq)), tag_seq))
+    taggedIT = [it for it in IT if it[1]!= 'O']
+    
+    startIdx = [idx for idx in range(len(taggedIT)) if taggedIT[idx][1][-2:] == '-B' or taggedIT[idx][1][-2:] == '-S']
+    startIdx.append(len(taggedIT))
+
+    entitiesList = []
+    for i in range(len(startIdx)-1):
+        entityAtom = taggedIT[startIdx[i]: startIdx[i+1]]
+        # string = ''.join([cit[0] for cit in entityAtom])
+        start, end = entityAtom[0][0], entityAtom[-1][0] + 1
+        tag = entityAtom[0][1].split('-')[0]
+        entitiesList.append((start, end, tag))
+    return entitiesList
+
 
 # def extractEmbedPath2Info(embed_path, channel = None):
 #     if not os.path.isfile(embed_path):
