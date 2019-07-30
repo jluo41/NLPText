@@ -4,6 +4,7 @@ import pickle
 from pprint import pprint
 from datetime import datetime
 import numpy as np
+from collections import defaultdict
 
 from .utils.infrastructure import writeGrainList2File, readPickleFile2GrainUnique, specialTokens, UNK_ID
 from .utils.infrastructure import modify_wordBoundary_with_hyperBoundary, trans_charLabels_to_wordLabels
@@ -125,9 +126,10 @@ class BasicObject(object):
         if 'ANNOIden' in anno_keywords: TEXT['ANNOFileName'] = []
             
         # sentence information
-        SENT = {}; SENT['Text2SentMethod'] = Text2SentMethod; SENT['EndIDXTokens'] = []
+        # TODO: change these to array to save space
+        SENT = {}; SENT['Text2SentMethod'] = Text2SentMethod; SENT['EndIDXTokens'] = np.zeros(5000000, dtype = int)
         # even more file information will be included here. TODO change this to numpy
-        for ch, path in cls.Channel_Hyper_Path.items(): SENT[path] = []
+        for ch, path in cls.Channel_Hyper_Path.items(): SENT[path] = np.zeros(5000000, dtype = int)
         
         # token information
         TOKEN = {}; TOKEN['Sent2TokenMethod'] = Sent2TokenMethod
@@ -143,11 +145,12 @@ class BasicObject(object):
         assert GROUP['GroupType'] == GroupType
         pprint(GroupType)
 
-        oldDTU = {}# change this to default dict with int
+        oldDTU = defaultdict(int)# change this to default dict with int
         oldLTU = []
         oldidx2freq = []
         token_num_in_corpus = 0
 
+        total_sent_num = 0
         for group_idx, group_name in enumerate(CorpusGroups):
             # the following block deals with each group in a corpus
             print(group_name)
@@ -157,11 +160,14 @@ class BasicObject(object):
             for strText_SSET_O_A in GroupTexts:
                 # the following block deals with each text in a group
                 strText, SSETText, origTextName, annoTextName = strText_SSET_O_A
+                
+                # print(strText, SSETText, origTextName, annoTextName)
+                
                 strSents = segText2Sents(strText, method = Text2SentMethod) 
 
                 # skip the sents that are empty and the sents which doesn't have annotations.
                 if len(strSents) == 0 or (anno and len(SSETText) == 0): continue
-                tokenizedSents = []
+                if anno: tokenizedSents = []
                 # the following to blocks deal with multiple hyperfields (include token and annoE) for each strSent in strSents
                 # the main input are strText and strSents, (especially strSents)
                 
@@ -173,10 +179,11 @@ class BasicObject(object):
                     
                     # should assert [' ' not in strToken for strToken in strTokens]
                     # and len(hyper_info) == len(strTokens)
+
                     strTokens, hyper_info = segSent2Tokens(strSent, Sent2TokenMethod, TOKENLevel, Channel_Dep_Methods)
 
                     # LESSION: update strSents, which will be used in annotation.
-                    tokenizedSents.append(strTokens)
+                    if anno: tokenizedSents.append(strTokens)
                     # deal with tokens
                     for token in strTokens:
                         # the following block deals with each token in a text.
@@ -196,10 +203,14 @@ class BasicObject(object):
                         line_sentence = ' '.join(strTokens) + '\n'
                         f.write(line_sentence)
                         bytelenSent = utf8len(line_sentence)
-                    try:
-                        SENT[cls.Channel_Hyper_Path['token']].append(SENT[cls.Channel_Hyper_Path['token']][-1] + bytelenSent)
-                    except:
-                        SENT[cls.Channel_Hyper_Path['token']].append(bytelenSent)
+                    
+                    # total_sent_num increase all the time
+                    # if it is 0, then SENT[cls.Channel_Hyper_Path['token']][total_sent_num - 1] will return 0
+                    SENT[cls.Channel_Hyper_Path['token']][total_sent_num] = SENT[cls.Channel_Hyper_Path['token']][total_sent_num - 1] + bytelenSent
+                    # try:
+                    #     # SENT[cls.Channel_Hyper_Path['token']].append(SENT[cls.Channel_Hyper_Path['token']][-1] + bytelenSent)
+                    # except:
+                    #     SENT[cls.Channel_Hyper_Path['token']][total_sent_num] = bytelenSent
 
                     # if use word level, make the sure that the return grains are the same.
                     # this is for generating the hyper field information.
@@ -212,22 +223,48 @@ class BasicObject(object):
                             line_sentence = ' '.join(ch_grain_sent) + '\n'
                             f.write(line_sentence)
                             bytelenSent = utf8len(line_sentence)
-                        try:
-                            SENT[cls.Channel_Hyper_Path[ch]].append(SENT[cls.Channel_Hyper_Path[ch]][-1] + bytelenSent)
-                        except:
-                            SENT[cls.Channel_Hyper_Path[ch]].append(bytelenSent)
+
+                        SENT[cls.Channel_Hyper_Path[ch]][total_sent_num] = SENT[cls.Channel_Hyper_Path[ch]][total_sent_num - 1] + bytelenSent
+                        # try:
+                        #     SENT[cls.Channel_Hyper_Path[ch]].append(SENT[cls.Channel_Hyper_Path[ch]][-1] + bytelenSent)
+                        # except:
+                        #     SENT[cls.Channel_Hyper_Path[ch]].append(bytelenSent)
 
                     # adding the sentence length, i.e., the token number in this sentence.
                     lenSent = len(strTokens)
-                    try:
-                        SENT['EndIDXTokens'].append(SENT['EndIDXTokens'][-1] + lenSent)
-                    except:
-                        SENT['EndIDXTokens'].append(lenSent)
+                    SENT['EndIDXTokens'][total_sent_num] = SENT['EndIDXTokens'][total_sent_num - 1] + lenSent
+                    # try:
+                    #     SENT['EndIDXTokens'].append(SENT['EndIDXTokens'][-1] + lenSent)
+                    # except:
+                    #     SENT['EndIDXTokens'].append(lenSent)
+
+                    # add a num to total_sent_num
+                    # to process next sentence
+                    total_sent_num = total_sent_num + 1
+
+
+                    # logging the information and epxand the length if necessary
+                    if total_sent_num % 100000 == 0:
+                        print(total_sent_num, '--', lenSent, datetime.now(), '\t',SENT['EndIDXTokens'][total_sent_num-1],  '\t', len(oldidx2freq), len(oldDTU), len(oldLTU))
+                        print('\t', len(SENT['EndIDXTokens']), 'token')
+                        for ch, ch_grain_sent in hyper_info.items():
+                            print('\t', len(SENT[cls.Channel_Hyper_Path[ch]]), ch)# .append(bytelenSent)
+
+                        if len(SENT['EndIDXTokens']) - total_sent_num <= 100000:
+                            print('\tEnlarging the SENT size...')
+                            print('\tcurrent leng is:', len(SENT['EndIDXTokens']))
+                            SENT[cls.Channel_Hyper_Path['token']] = np.concatenate([SENT[cls.Channel_Hyper_Path['token']], np.zeros(2000000, dtype = int)])
+                            SENT['EndIDXTokens'] = np.concatenate([SENT['EndIDXTokens'], np.zeros(2000000, dtype = int)])
+                            for ch, ch_grain_sent in hyper_info.items():
+                                SENT[cls.Channel_Hyper_Path[ch]] = np.concatenate([SENT[cls.Channel_Hyper_Path[ch]], np.zeros(2000000, dtype = int)])
+                            print('\tupdated leng is:', len(SENT['EndIDXTokens']))
+
 
                 # block1: for annotation.
                 if anno: 
                     if SSETText == []: print('\nThe SSET of this Text is Empty!!!', '\n', strText, '\n')
 
+                    # produce the VOCAB
                     new_labels = set([sset[-1] for sset in SSETText])
                     for label in new_labels:
                         if label not in anno_labels:
@@ -242,6 +279,8 @@ class BasicObject(object):
                     # get CITSents
                     CITSents = getCITSents(tokenizedSents, CITText, TOKENLevel)
                     
+                    # pay attention: do not change total_sent_num
+                    last_total_sent_num = total_sent_num - len(CITSents) 
                     for sentIdx, CITSent in enumerate(CITSents):
                         anno_tags = [CITToken[2] for CITToken in CITSent]
                         anno_tags = [str(cls.VOCAB[Path_Key]['annoE-bioes'][1][i]) for i in anno_tags]
@@ -253,13 +292,18 @@ class BasicObject(object):
                             line_sentence = ' '.join(anno_tags) + '\n'
                             f.write(line_sentence)
                             bytelenSent = utf8len(line_sentence)
-                        try:
-                            SENT[cls.Channel_Hyper_Path['annoE']].append(SENT[cls.Channel_Hyper_Path['annoE']][-1] + bytelenSent)
-                        except:
-                            SENT[cls.Channel_Hyper_Path['annoE']].append(bytelenSent)
+                        
+                        sent_loc_id = last_total_sent_num + sentIdx
+                        SENT[cls.Channel_Hyper_Path['annoE']][sent_loc_id] = SENT[cls.Channel_Hyper_Path['annoE']][sent_loc_id - 1] + bytelenSent
+                        # try:
+                        #     SENT[cls.Channel_Hyper_Path['annoE']].append(SENT[cls.Channel_Hyper_Path['annoE']][-1] + bytelenSent)
+                        # except:
+                        #     SENT[cls.Channel_Hyper_Path['annoE']].append(bytelenSent)
+                    assert sent_loc_id + 1 == total_sent_num
                     if annoTextName:
                         TEXT['ANNOFileName'].append(annoTextName)
                     
+                # deal with the text and its sentences information
                 lenText = len(strSents)
                 try:
                     TEXT['EndIDXSents'].append(TEXT['EndIDXSents'][-1] + lenText)
@@ -270,8 +314,11 @@ class BasicObject(object):
                     TEXT['ORIGFileName'].append(origTextName)
                 
                 textIdx = textIdx + 1
-                if textIdx % 100000 == 0:
-                    print(textIdx, '--', len(strSents), len(strText), datetime.now())
+                # if textIdx % 100000 == 0:
+                #     print(textIdx, '--', len(strSents), len(strText), datetime.now())
+                #     print(len(SENT['EndIDXTokens']))
+                #     for ch, ch_grain_sent in hyper_info.items():
+                #         print(len(SENT[cls.Channel_Hyper_Path[ch]]), ch)# .append(bytelenSent)
 
             # Back to Folder
             lenGroup = textIdx
@@ -304,7 +351,7 @@ class BasicObject(object):
         del oldLTU
         del newidx2oldidx
 
-        DTU = {}
+        DTU = defaultdict(int)
         for new_idx, token in enumerate(LTU):
             DTU[token] = new_idx
         
@@ -321,10 +368,10 @@ class BasicObject(object):
         TEXT['EndIDXSents']    = np.array(TEXT['EndIDXSents'])
         TEXT['length']         = len(TEXT['EndIDXSents'])
 
-        SENT['EndIDXTokens']   = np.array(SENT['EndIDXTokens'])
+        SENT['EndIDXTokens']   = SENT['EndIDXTokens'][:total_sent_num]
         SENT['length']         = len(SENT['EndIDXTokens'])
         for ch, path in cls.Channel_Hyper_Path.items():
-            SENT[path] = np.array(SENT[path])
+            SENT[path] = SENT[path][:total_sent_num]
 
         TOKEN['length']        = token_num_in_corpus
         
