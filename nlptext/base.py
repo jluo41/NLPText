@@ -167,6 +167,8 @@ class BasicObject(object):
 
                 # skip the sents that are empty and the sents which doesn't have annotations.
                 if len(strSents) == 0 or (anno and len(SSETText) == 0): continue
+                # if len(strSents) == 0: continue
+
                 if anno: tokenizedSents = []
                 # the following to blocks deal with multiple hyperfields (include token and annoE) for each strSent in strSents
                 # the main input are strText and strSents, (especially strSents)

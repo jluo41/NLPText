@@ -8,6 +8,7 @@ from datetime import datetime
 from smart_open import smart_open
 import itertools
 
+from .anno import getSSET_from_CIT
 from .infrastructure import strQ2B, fileReader, any2unicode
 
 ##################################################################################################CORPUS-FOLDER
@@ -165,7 +166,41 @@ def anno_embed_in_text(line):
         SSETText.append(sset) 
     return strText, SSETText
 
-def textLineReader(folderPath, fileNames, anno = False, **kwargs):
+
+# 其实/o 非/o 汉/o 非/o 唐/o ，/o 又是/o 什么/o 与/o 什么/o 呢/o ？/o 
+anno = 'anno_embed_along_token' 
+anno_keywords = {
+    'sep_between_tokens': ' ',
+    'sep_between_token_label': '/', 
+}
+
+def anno_embed_along_token(line, **anno_keywords):
+    line = line.replace('\n', '')
+    sep_between_tokens = anno_keywords['sep_between_tokens']
+    sep_between_token_label = anno_keywords['sep_between_token_label']
+    tokenlabel_seq = line.split(sep_between_tokens)
+    tokenlabel_split_seq = [i.split(sep_between_token_label) for i in tokenlabel_seq if sep_between_token_label in i]
+    tokenlabel_split_seq = [i for i in tokenlabel_split_seq if len(i) == 2 ]
+    tokenlabel_split_seq = [i for i in tokenlabel_split_seq if i[0] != '' ]
+    # print(tokenlabel_split_seq)
+    strText = ''
+    SSETText = []
+    for tokensfrag_label in tokenlabel_split_seq:
+        try:
+            tokensfrag, label = tokensfrag_label
+        except:
+            print(tokensfrag_label)
+            continue
+        startidx = len(strText)
+        strText = strText + tokensfrag
+        endidx = len(strText)
+        if label.lower() != 'o':
+            SSETText.append([tokensfrag, startidx, endidx, label])
+
+    return strText, SSETText
+
+
+def textLineReader(folderPath, fileNames, anno = False, **anno_keywords):
     with smart_open(folderPath) as fin:
         for line in itertools.islice(fin, None):
             line = strQ2B(any2unicode(line))
@@ -173,7 +208,10 @@ def textLineReader(folderPath, fileNames, anno = False, **kwargs):
             SSETText = []
             if anno == 'anno_embed_in_text':
                 strText, SSETText = anno_embed_in_text(line)
+            elif anno == 'anno_embed_along_token':
+                strText, SSETText = anno_embed_along_token(line, **anno_keywords)
             # print(strText)
+            # print(SSETText)
             yield strText, SSETText, None, None
 
 anno = 'conll_block'

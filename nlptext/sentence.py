@@ -201,11 +201,11 @@ class Sentence(BasicObject):
         
     @property 
     def IdxCorpus(self):
-        return bisect(self.CORPUS['EndIDXFolders'] , self.IdxFolder)
+        return bisect(self.CORPUS['EndIDXFolders'] , self.IdxGroup)
 
     @property
-    def IdxFolder(self):
-        return bisect(self.FOLDER['EndIDXTexts'] , self.IdxText)
+    def IdxGroup(self):
+        return bisect(self.GROUP['EndIDXTexts'] , self.IdxText)
 
     @property
     def IdxText(self):
@@ -231,8 +231,8 @@ class Sentence(BasicObject):
 
     @property
     def Folder(self):
-        from .folder import Folder 
-        return Folder(self.IdxFolder)
+        from .group import Group 
+        return Group(self.IdxGroup)
 
     @property
     def Text(self):
