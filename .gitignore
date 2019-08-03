@@ -11,7 +11,7 @@ corpus/LuohuCorpus*/
 corpus/LuohuNER/
 corpus/ccks/
 corpus/Wiki*/
-
+corpus/fudan
 
 output/
 embed/
