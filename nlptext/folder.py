@@ -14,7 +14,7 @@ class Folder(BasicObject):
 
     @property
     def name(self):
-        return self.GROUP['folderPaths'][self.Idx]
+        return self.GROUP['group_names'][self.Idx]
 
     @property 
     def IdxCorpus(self):
