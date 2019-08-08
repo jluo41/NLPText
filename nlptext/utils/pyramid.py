@@ -134,8 +134,13 @@ def textFileReader(folderPath, fileNames, anno = False, **kwargs):
         
         # here we process each text, and want to get strText, SSET, orig, anno
         SSETText = []
-        with open(os.path.join(folderPath, origTextName), 'r', encoding = 'utf-8') as f:
-            strText = strQ2B(f.read())
+        path = os.path.join(folderPath, origTextName)
+        with open(path, 'r', encoding = 'utf-8') as f:
+            try:
+                strText = strQ2B(f.read())
+            except:
+                strText = ''
+                print('Error in file:', path)
 
         if anno == 'annofile4text':
             SSETText, annoTextName = annofile4text(strText, folderPath, origTextName, fileNames, ORIGIden, **kwargs)
