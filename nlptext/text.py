@@ -64,7 +64,7 @@ class Text(BasicObject):
 
     @property
     def IdxFolder(self):
-        return bisect(self.FOLDER['EndIDXTexts'] , self.Idx)
+        return bisect(self.GROUP['EndIDXTexts'] , self.Idx)
 
     @property
     def IdxSentStartEnd(self):
