@@ -14,7 +14,7 @@ class Folder(BasicObject):
 
     @property
     def name(self):
-        return self.FOLDER['folderPaths'][self.Idx]
+        return self.GROUP['folderPaths'][self.Idx]
 
     @property 
     def IdxCorpus(self):
@@ -24,8 +24,8 @@ class Folder(BasicObject):
     @property
     def IdxTextStartEnd(self):
         s, e = self.Idx, self.Idx + 1
-        s = self.FOLDER['EndIDXTexts'][s-1] if s != 0 else 0
-        e = self.FOLDER['EndIDXTexts'][e-1]
+        s = self.GROUP['EndIDXTexts'][s-1] if s != 0 else 0
+        e = self.GROUP['EndIDXTexts'][e-1]
         return s, e 
 
     @property

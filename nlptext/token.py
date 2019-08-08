@@ -51,7 +51,7 @@ class Token(BasicObject):
 
     @property
     def IdxFolder(self):
-        return bisect(self.FOLDER['EndIDXTexts'] , self.IdxText)
+        return bisect(self.GROUP['EndIDXTexts'] , self.IdxText)
 
     @property
     def IdxText(self):
