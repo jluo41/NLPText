@@ -90,7 +90,7 @@ class Sentence(BasicObject):
 
     def get_grain_idx(self, channel, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, min_grain_freq = 1, tagScheme = 'BIO', channel_name = None, 
                       Data_Dir = None,
-                      GU = None, TU = None, LKP = None, TRANS = None):
+                      GU = None, TU = None, LKP = None, TRANS = None, unk_id = None):
 
         '''
             1. Once GU TU LKP and TRANS are settled, channel_name is settled before.
@@ -111,7 +111,7 @@ class Sentence(BasicObject):
                     TU = self.getGrainVocab('token', Data_Dir = Data_Dir); GU = TU
 
             LTU, DTU = TU
-            unk_id = len(DTU)
+            if unk_id is None: unk_id = len(DTU)
             info = [[DTU.get(tk, unk_id)] for tk in self.sentence.split(' ')]
             leng_st = len(info)
             leng = [1] * leng_st
@@ -129,7 +129,7 @@ class Sentence(BasicObject):
             # deal with hyper fields
             if not GU: GU = self.getGrainVocab(channel, channel_name = channel_name, Data_Dir =Data_Dir)
             LGU, DGU = GU
-            unk_id = len(DGU)
+            if unk_id is None: unk_id = len(DGU)
 
             if not self._sentence:
                 # Generally, we will use this one.
@@ -150,7 +150,7 @@ class Sentence(BasicObject):
             # deal with sub fields
             if not GU: GU = self.getGrainVocab(channel, channel_name = channel_name, Data_Dir =Data_Dir)
             LGU, DGU = GU
-            unk_id = len(LGU)
+            if unk_id is None: unk_id = len(LGU)
 
             if not (LKP and TU):
                 try:
@@ -162,17 +162,17 @@ class Sentence(BasicObject):
                 # if we can get LKP and TU
                 sentence_tokens = self.sentence.split(' ')
                 LTU, DTU = TU
-                unk_id = len(DTU)
+                if unk_id is None: 
+                    tk_unk_id = len(DTU)
+                else:
+                    tk_unk_id = unk_id # NOTICE: we assume that both grain_unkown and token unknown are the same.
 
-                # print(LTU[:100])
-                # print(len(DTU))
-                # print([tk for tk in self.sentence.split(' ')])
-                tk_voc_info = [DTU.get(tk, unk_id) for tk in self.sentence.split(' ')]
+                tk_voc_info = [DTU.get(tk, tk_unk_id) for tk in sentence_tokens]
                 # print(tk_voc_info)
 
                 info = []
                 for idx, tk_voc in enumerate(tk_voc_info):
-                    if tk_voc != unk_id:
+                    if tk_voc != tk_unk_id:
                         info.append(LKP[tk_voc])
                     else:
                         # deal with the low freq words
