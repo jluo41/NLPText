@@ -481,7 +481,7 @@ def segText2Sents(text, method = 'whole', **kwargs):
     # postprocessing
     # after this, there is no '\n' in sents
     sents = [sent.replace('\n', '').replace('\\n', '') for sent in sents]
-    sents = [sent for sent in sents if len(sent) > 5]
+    sents = [sent for sent in sents if len(sent) > 0]
     # print(sents)
     return sents
 

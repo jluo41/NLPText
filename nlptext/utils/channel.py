@@ -292,11 +292,11 @@ def POSENGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
 ##################################################################
 
 ################################################################################################
-CONTEXT_IND_CHANNELS    = ['basic', 'medical', 'radical', 'token', 'char', 'subcomp', 'stroke', 'pinyin']
+CONTEXT_IND_CHANNELS    = ['basic', 'medical', 'radical', 'token', 'char', 'subcomp', 'stroke', 'pinyin', 'syllable', 'phoneme', ]
 CONTEXT_DEP_CHANNELS    = ['pos', 'pos_en']
 ANNO_CHANNELS           = ['annoR', 'annoE']
 
-CONTEXT_IND_CHANNELS_AB = ['b', 'm', 'r',  'T', 'C', 'c', 's', 'y']
+CONTEXT_IND_CHANNELS_AB = ['b', 'm', 'r',  'T', 'C', 'c', 's', 'y', 'sl', 'ph']
 CONTEXT_DEP_CHANNELS_AB = ['P', 'Pe']
 ANNO_CHANNELS_AB        = ['R', 'E']
 

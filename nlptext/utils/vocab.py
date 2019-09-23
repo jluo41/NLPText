@@ -3,7 +3,7 @@ import collections
 from datetime import datetime
 from .channel import getChannelGrain4Token
 from .infrastructure import UNK, UNK_ID, specialTokens, specialTokensDict
-
+import pandas as pd
 
 ##################################################################################################TOKEN_LTU
 def buildTokens(tokenList):
@@ -87,10 +87,12 @@ def get_GU_or_LKP(TokenVocab, tkidx2freq,
         for gr in grain2number:
             if gr in oldDGU:
                 oldidx2freq[oldDGU[gr]] = oldidx2freq[oldDGU[gr]] + grain2number[gr] * token_freq
+                # oldidx2freq[oldDGU[gr]] = oldidx2freq[oldDGU[gr]] + grain2number[gr] 
             else:
                 oldDGU[gr] = len(oldDGU)
                 oldLGU.append(gr)
                 oldidx2freq.append(grain2number[gr] * token_freq)
+                # oldidx2freq.append(grain2number[gr])
 
         LKP.append([oldDGU[gr] for gr in ChN])
         if idx % 100000 == 0:
@@ -99,13 +101,13 @@ def get_GU_or_LKP(TokenVocab, tkidx2freq,
     # remove some high and low frequency grains.
     # how to deal with the high freqency grains?
     # notice that the grain freq is based on vocab instead of corpus.
+    del oldDGU 
     assert len(LKP) == len(LTU)
     
     # sort the LGU, DGU and renew LKP
     oldidx2freq = np.array(oldidx2freq)
     max_grain_num = len(oldidx2freq[oldidx2freq >= min_grain_freq])
     
-    del oldDGU 
     grainidx2freq = np.sort(oldidx2freq)[::-1]
     newidx2oldidx = np.argsort(oldidx2freq)[::-1]
     del oldidx2freq

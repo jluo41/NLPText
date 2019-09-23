@@ -2,7 +2,7 @@
 
 ##################################################################################################TEXT-ANNO
 def getCITText(strText, SSETText, TOKENLevel='char'):
-    assert len(SSETText) > 0 
+    # assert len(SSETText) > 0 
     if TOKENLevel == 'char':
         for sset in SSETText:
             try:
