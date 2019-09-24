@@ -141,7 +141,7 @@ class BasicObject(object):
 
         ################################################################################################################
         CorpusGroups, GroupType = CorpusGroupsReader(CORPUSPath, iden = Corpus2GroupMethod)
-        # print()
+        # print(CorpusGroups, GroupType)
         assert GROUP['GroupType'] == GroupType
         pprint(GroupType)
 
