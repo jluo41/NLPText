@@ -12,6 +12,9 @@ corpus/LuohuNER/
 corpus/ccks/
 corpus/Wiki*/
 corpus/fudan
+corpus/CHIP*
+corpus/MedPos
+
 
 output/
 embed/
