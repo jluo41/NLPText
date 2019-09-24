@@ -17,7 +17,12 @@ def CorpusGroupsReader(CORPUSPath, iden = 'Dir'):
     # file is the priority
     if iden != 'Dir':
         corpusFiles = [i for i in os.listdir(CORPUSPath) if iden in i]
-        return {os.path.join(CORPUSPath, fd): '' for fd in corpusFiles}, 'File'
+        if corpusFiles == []:
+            results = [x for x in os.walk(CORPUSPath) if x[2]]
+            results = {i[0]: i[2] for i in results}
+            corpusFiles = sum([[pre + '/' + i for i in results[pre]] for pre in results], [])
+            return {fd: ''      for fd in corpusFiles}, 'File'
+        return {os.path.join(CORPUSPath, fd): ''      for fd in corpusFiles}, 'File'
     else:
         results = [x for x in os.walk(CORPUSPath) if x[2]]
         return {i[0]: i[2] for i in results}, 'Dir'
