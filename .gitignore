@@ -8,8 +8,8 @@ nlptext/__pycache__/
 nlptext/__pycache__/base.cpython-36.pyc
 
 corpus/LuohuCorpus*/
-corpus/LuohuNER/
-corpus/ccks/
+corpus/LuohuNER*/
+corpus/CCKS*/
 corpus/Wiki*/
 corpus/fudan
 corpus/CHIP*
