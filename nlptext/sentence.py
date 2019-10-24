@@ -231,8 +231,8 @@ class Sentence(BasicObject):
 
     @property
     def Folder(self):
-        from .group import Group 
-        return Group(self.IdxGroup)
+        from .folder import Folder 
+        return Folder(self.IdxGroup)
 
     @property
     def Text(self):

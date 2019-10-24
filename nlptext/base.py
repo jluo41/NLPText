@@ -218,7 +218,7 @@ class BasicObject(object):
                     # this is for generating the hyper field information.
                     # before using the hyper field information, we must know their labels before.
                     for ch, ch_grain_sent in hyper_info.items():
-                        ch_grain_sent = [str(cls.VOCAB[Path_Key][channel_name][1].get(i)) for i in ch_grain_sent]
+                        ch_grain_sent = [str(cls.VOCAB[Path_Key][channel_name][1].get(i, 0)) for i in ch_grain_sent]
                         assert len(ch_grain_sent) == len(strTokens)
                         # or you can create a file, which is LineSentence type file. each line is a sentence.
                         with open(cls.Channel_Hyper_Path[ch], 'a') as f:
