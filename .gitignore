@@ -15,6 +15,9 @@ corpus/fudan
 corpus/CHIP*
 corpus/MedPos
 
+topics/
+_etc/
+ZhihuContent/
 
 output/
 embed/
