@@ -175,6 +175,7 @@ class BasicObject(object):
                 
                 # block 1: for token and other hyper fields.
                 for idx, strSent in enumerate(strSents):
+                    print(idx, strSent[:10])
                     # the following block deals with each strSent in a text.
                     # if strTags is not None, strTokens and strTags share the same length, 
                     # and this should be assert inside segSent2Tokens
@@ -183,7 +184,7 @@ class BasicObject(object):
                     # and len(hyper_info) == len(strTokens)
 
                     strTokens, hyper_info = segSent2Tokens(strSent, Sent2TokenMethod, TOKENLevel, Channel_Dep_Methods)
-
+                    # print(strTokens, hyper_info)
                     # LESSION: update strSents, which will be used in annotation.
                     if anno: tokenizedSents.append(strTokens)
                     # deal with tokens
@@ -218,7 +219,12 @@ class BasicObject(object):
                     # this is for generating the hyper field information.
                     # before using the hyper field information, we must know their labels before.
                     for ch, ch_grain_sent in hyper_info.items():
+                        # print(ch_grain_sent)
+                        channel_name = ch + '-bioes'
                         ch_grain_sent = [str(cls.VOCAB[Path_Key][channel_name][1].get(i, 0)) for i in ch_grain_sent]
+                        # print(ch_grain_sent)
+                        # if not len(ch_grain_sent) == len(strTokens):
+                        #     print(list(zip(strTokens, ch_grain_sent)))
                         assert len(ch_grain_sent) == len(strTokens)
                         # or you can create a file, which is LineSentence type file. each line is a sentence.
                         with open(cls.Channel_Hyper_Path[ch], 'a') as f:

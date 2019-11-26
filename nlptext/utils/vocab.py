@@ -52,13 +52,6 @@ def buildTokens(tokenList):
 ##################################################################################################TOKEN_LTU
 
 
-##################################################################################################LTU_LGU-LT
-from datetime import datetime
-
-import numpy as np
-from nlptext.utils.channel import getChannelGrain4Token
-import collections
-
 
 
 def get_num_freq(idx2freq, min_token_freq = 1):

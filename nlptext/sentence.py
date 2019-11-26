@@ -266,3 +266,5 @@ class Sentence(BasicObject):
         ctx =  str(self.Idx)  if type(self.Idx) == int else 'New'
 
         return "<st " + ctx + " (tokenNum: " + str(self.length) + ") >"
+
+

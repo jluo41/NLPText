@@ -569,6 +569,9 @@ def segSent2Tokens(sent, seg_method = 'iter', tokenLevel = 'char', Channel_Dep_M
         # this assert should be inside the hyper_field_method
         # assert len(ch_grain_sent) == len(final_tokens)
         hyper_info[ch] = ch_grain_sent
+        if len(strTokens) != len(ch_grain_sent):
+            print(ch_grain_sent, strTokens)
+
         assert len(strTokens) == len(ch_grain_sent)
 
     return strTokens, hyper_info

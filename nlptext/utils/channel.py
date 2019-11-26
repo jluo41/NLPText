@@ -8,6 +8,7 @@ import nltk
 import pyphen
 from .infrastructure import specialTokens
 
+from medpos.crfpp.tagger import medpos_tagger
 ################## FOR THE CONTEXT-INDEPENDENT CHANNELS ################
 
 ##### basic
@@ -266,6 +267,55 @@ def POSGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
         return GrainSent, tokens
 
 
+
+MedPosTag = ['notsure', '临床属性', '事件','人群', '代词', '体征与症状',
+ '医疗仪器', '医疗行为', '单位', '因果', '地名机构名', '定性', '或许','数字', '数学符号',
+ '无', '时间单位', '时间概念', '有', '标点', '检查项目', '治疗项目', '物体',
+ '生物', '疾病', '空间概念', '药物', '虚词','身体功能', '身体物质',  '身体部位', '连词']
+
+
+
+
+def MedPOSGrainSent(sent, tokenLevel = 'char', tagScheme = 'BIOES'):
+    
+
+    result_entities = medpos_tagger(sent)
+    sentence = [i for i in sent]
+
+    entities = []
+    for i in result_entities:
+        s, e, label = i
+        entities.append((''.join(sentence[s:e]), s, e, label))
+    # entities
+    
+  
+    assert tokenLevel == 'char'
+    tokens = []
+    GrainSent = []
+
+    try:
+        for sset in entities:
+            string, s, e, label = sset
+            leng  = len(string)
+            labels= [label + '-I' ]*leng
+            labels[0] = label + '-B'
+            if 'E' in tagScheme and leng >= 2:
+                labels[-1] = label + '-E'
+            if 'S' in tagScheme and leng == 1:
+                labels[0] = label + '-S'
+            GrainSent.extend(labels)
+            tokens.extend([i for i in string])
+    except:
+        print(entities)
+
+
+    # print(list(zip(tokens, GrainSent)))
+    
+    return GrainSent, tokens
+
+
+
+
 posEnTag = ['LS', 'TO', 'VBN', "''", 'WP', 'UH', 'VBG', 'JJ', 'VBZ', '--', 
             'VBP', 'NN', 'DT', 'PRP', ':', 'WP$', 'NNPS', 'PRP$', 'WDT', 
             '(', ')', '.', ',', '``', '$', 'RB', 'RBR', 'RBS', 'VBD', 'IN', 
@@ -293,11 +343,11 @@ def POSENGrainSent(sent, tokenLevel = 'word', tagScheme = 'BIOES'):
 
 ################################################################################################
 CONTEXT_IND_CHANNELS    = ['basic', 'medical', 'radical', 'token', 'char', 'subcomp', 'stroke', 'pinyin', 'syllable', 'phoneme', ]
-CONTEXT_DEP_CHANNELS    = ['pos', 'pos_en']
+CONTEXT_DEP_CHANNELS    = ['pos', 'pos_en', 'medpos']
 ANNO_CHANNELS           = ['annoR', 'annoE']
 
 CONTEXT_IND_CHANNELS_AB = ['b', 'm', 'r',  'T', 'C', 'c', 's', 'y', 'sl', 'ph']
-CONTEXT_DEP_CHANNELS_AB = ['P', 'Pe']
+CONTEXT_DEP_CHANNELS_AB = ['P', 'Pe', 'MP']
 ANNO_CHANNELS_AB        = ['R', 'E']
 
 CHANNEL_ABBR = dict(zip(CONTEXT_IND_CHANNELS + CONTEXT_DEP_CHANNELS+ANNO_CHANNELS , 
@@ -317,9 +367,12 @@ Channel_Ind_Methods ={
 }
 
 Channel_Dep_Methods = {'pos': POSGrainSent, 
-                       'pos_en': POSENGrainSent}
+                       'pos_en': POSENGrainSent, 
+                       'medpos': MedPOSGrainSent}
+
 Channel_Dep_TagSets = {'pos': posTag, 
-                       'pos_en': posEnTag}
+                       'pos_en': posEnTag, 
+                       'medpos': MedPosTag}
 
 
 ################################################################################################
