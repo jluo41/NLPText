@@ -34,9 +34,12 @@ here.npy
 
 .DS_Store
 
-
+_tmp/
 # C extensions
 *.so
+
+medpos/ 
+# we need to pip install medpos
 
 # Distribution / packaging
 .Python
