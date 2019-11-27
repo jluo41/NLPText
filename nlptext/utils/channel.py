@@ -7,8 +7,10 @@ import nltk
 
 import pyphen
 from .infrastructure import specialTokens
-
-from medpos.crfpp.tagger import medpos_tagger
+try:
+    from medpos.crfpp.tagger import medpos_tagger
+except:
+    print('MedPos is not available yet')
 ################## FOR THE CONTEXT-INDEPENDENT CHANNELS ################
 
 ##### basic
