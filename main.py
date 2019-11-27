@@ -58,30 +58,33 @@ from nlptext.base import BasicObject
 #                  anno = False, anno_keywords = anno_keywords)
 
 
+
 from pprint import pprint
 from nlptext.base import BasicObject
 
-CORPUSPath = 'corpus/MSRA/'
+CORPUSPath = 'corpus/LuohuNER750Neat/'
 
-Corpus2GroupMethod = '.txt'
+Corpus2GroupMethod = 'Dir' # TODO
 
-Group2TextMethod   = 'line'
+Group2TextMethod   = 'file'
 
-Text2SentMethod  = 'whole'
+Text2SentMethod  = 're'
 
 Sent2TokenMethod = 'iter'
 TOKENLevel = 'char'
 
 min_token_freq = 1
 
-use_hyper = []
+use_hyper = {'pos', 'medpos'}
 
-# 其实/o 非/o 汉/o 非/o 唐/o ，/o 又是/o 什么/o 与/o 什么/o 呢/o ？/o 
-anno = 'anno_embed_along_token' 
+anno = 'annofile4text'
 anno_keywords = {
-    'sep_between_tokens': ' ',
-    'sep_between_token_label': '/', 
+    'ANNOIden': '.NER',
+    'anno_sep' : '\t', 
+    'notZeroIndex' : 0, # if 0, indexed from zero
+    'notRightOpen' : 0, # if 0, Right is Open, is 1 not Open
 }
+
 
 BasicObject.INIT(CORPUSPath, 
                  Corpus2GroupMethod, 
@@ -90,3 +93,4 @@ BasicObject.INIT(CORPUSPath,
                  Sent2TokenMethod, TOKENLevel, min_token_freq = min_token_freq,
                  use_hyper = use_hyper, 
                  anno = anno, anno_keywords = anno_keywords)
+
