@@ -53,18 +53,29 @@ def buildTokens(tokenList):
 
 
 
-
 def get_num_freq(idx2freq, min_token_freq = 1):
     max_vocab_token_num = len(idx2freq[idx2freq >= min_token_freq])
     return max_vocab_token_num
 
-def get_GU_or_LKP(TokenVocab, tkidx2freq, 
-                  channel= 'char', Min_Ngram = 1, Max_Ngram = 1, end_grain = False, min_grain_freq = 1):
+def get_GU_or_LKP(TokenVocab, 
+                  tkidx2freq = None, 
+                  channel = 'char', 
+                  Min_Ngram = 1, 
+                  Max_Ngram = 1, 
+                  end_grain = False, 
+                  min_grain_freq = 1):
 
+    '''
+        tkidx2freq: if tkidx2freq is None, then we treat each token as equal. then the grain weights are generated based Vocab instead of Corpus.
+
+    '''
     # ListGrainUnique = []
     LTU, DTU = TokenVocab
     # max_vocab_token_num = get_num_freq(tkidx2freq, min_token_freq = min_token_freq)
     # LTU = LTU[:max_vocab_token_num]
+
+    if tkidx2freq == None:
+        tkidx2freq = [1] * len(LTU)
     
     # the containers to store our results
     oldLGU = []
