@@ -94,9 +94,42 @@ def medicalGrainToken(token, end_grain = False):
     return info
     
 
+
+
+current_dir_old = os.path.abspath(os.path.dirname(__file__))
+current_dir, _ = os.path.split(current_dir_old)
+
+# print(current_dir_old)
+# print(current_dir)
+# data_dir = os.path.join(current_dir, 'data')
+
+
+
 #### subcomp
-with open('nlptext/sources/CharSubComp.p', 'rb') as handle:
+
+with open( os.path.join(current_dir, 'sources/CharSubComp.p'), 'rb') as handle:
     CharSubCompInfos = pickle.load(handle)
+
+#### stroke
+
+with open( os.path.join(current_dir, 'sources/CharStroke.p'), 'rb') as handle:
+    CharStrokeInfos = pickle.load(handle)
+    
+#### radical
+
+with open( os.path.join(current_dir, 'sources/CharRadical.p'), 'rb') as handle:
+    CharRadicalInfos = pickle.load(handle)
+
+#### pinyin
+
+with open( os.path.join(current_dir, 'sources/CharPinyin.p'), 'rb') as handle:
+    CharPinyinInfos = pickle.load(handle)
+
+
+## phonemes
+with open( os.path.join(current_dir, 'sources/WordPhoneme.p'), 'rb') as handle:
+    WordPhenomeInfo = pickle.load(handle)
+
 
 def subcompGrainChar(char, end_grain = False):
     '''char level only!'''
@@ -118,10 +151,6 @@ def subcompGrainToken(token, end_grain = False):
     return info
 
 
-#### stroke
-with open('nlptext/sources/CharStroke.p', 'rb') as handle:
-    CharStrokeInfos = pickle.load(handle)
-    
 def strokeGrainChar(char, end_grain = False):
     '''char level only!'''
     if char in CharStrokeInfos:
@@ -140,10 +169,6 @@ def strokeGrainChar(char, end_grain = False):
 def strokeGrainToken(token, end_grain = False):
     info = sum([strokeGrainChar(char, end_grain) for char in token], [])
     return info
-
-#### radical
-with open('nlptext/sources/CharRadical.p', 'rb') as handle:
-    CharRadicalInfos = pickle.load(handle)
 
 def radicalGrainChar(char, end_grain = False):
     ''''char level only!'''
@@ -176,9 +201,6 @@ def charGrainToken(token, end_grain = False):
     info = sum([charGrainChar(char, end_grain) for char in token], [])
     return info
 
-#### pinyin
-with open('nlptext/sources/CharPinyin.p', 'rb') as handle:
-    CharPinyinInfos = pickle.load(handle)
 
 def pinyinGrainChar(char, end_grain = False):
     '''char level only!'''
@@ -210,9 +232,6 @@ def syllableGrainToken(token, end_grain = False):
         info = ['']
     return info
 
-## phonemes
-with open('nlptext/sources/WordPhoneme.p', 'rb') as handle:
-    WordPhenomeInfo = pickle.load(handle)
 
 def phonemeGrainToken(token, end_grain = False): 
     try:
