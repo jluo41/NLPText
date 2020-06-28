@@ -17,15 +17,17 @@ from .utils.vocab import buildTokens, get_GU_or_LKP, get_num_freq
 from .utils.channel import CONTEXT_IND_CHANNELS, CONTEXT_DEP_CHANNELS, ANNO_CHANNELS, CHANNEL_ABBR
 from .utils.channel import Channel_Dep_Methods, Channel_Dep_TagSets, getChannelName, get_Channel_Settings
 
+#---------------------- Conceptions ------------------# 
+## 1. labels and tags
+# label: ['Person', 'Location']
+# tag  : ['O', Person-B', 'Person-I', 'Location-B', 'Location-I']
 
-# labels and tags
-# labels: ['Person', 'Location']
-# tags  : ['O', Person-B', 'Person-I', 'Location-B', 'Location-I']
+## 2. token, token_idx, token_locidx
+#      token  | token_idx (in TU)  | token_locidx_incorpus (in C, G, T, S)}
+# eg:  "New"  |       10           |                  123
 
-# token, token_idx, token_locidx
-# "New",        10,          123
-# DTU['New'] = 10
-# token(123) = "New", perhaps there is another token_locidx which is also "New".
+#--- DTU['New'] = 10
+#--- token(123) = "New", perhaps there is another token_locidx which is also "New".
 
 def utf8len(s):
     return len(s.encode('utf-8'))
@@ -49,8 +51,10 @@ class BasicObject(object):
     TRANS = {}
     # deal with the sub field information
     LOOKUP = {}
+    # store the freq of grains in TV or Corpus.
     FREQ   = {}
 
+    # temporal contextual information: for hyper fields.
     CTX_DEP_TMP = {}
 
     # other items
@@ -71,6 +75,9 @@ class BasicObject(object):
         
         Channel_Dep_Methods = {i:k for i,k in Channel_Dep_Methods.items() if i in use_hyper} 
         Channel_Dep_TagSets = {i:k for i,k in Channel_Dep_TagSets.items() if i in use_hyper} 
+
+        # here assert min_token_freq is 1.
+        assert min_token_freq == 1
         
         ################################################################################################################
         corpus_name = CORPUSPath.split('/')[-2]
@@ -114,36 +121,52 @@ class BasicObject(object):
         ################################################################################################################
         # init 五大老五奉行
         # corpus information
-        CORPUS = {}; CORPUS['CORPUSPath'] = CORPUSPath; CORPUS['Data_Dir'] = Data_Dir; CORPUS['EndIDXGroups'] = []
+        CORPUS = {}
+        CORPUS['CORPUSPath'] = CORPUSPath
+        CORPUS['Data_Dir'] = Data_Dir
+        CORPUS['EndIDXGroups'] = []
         
         # group information
-        GROUP = {}; GROUP['Corpus2GroupMethod'] = Corpus2GroupMethod 
-        GROUP['GroupType']   = 'File' if Corpus2GroupMethod != 'Dir' else 'Dir'; GROUP['group_names'] = []; GROUP['EndIDXTexts'] = []
+        GROUP = {}
+        GROUP['Corpus2GroupMethod'] = Corpus2GroupMethod 
+        GROUP['GroupType']   = 'File' if Corpus2GroupMethod != 'Dir' else 'Dir'
+        GROUP['group_names'] = []
+        GROUP['EndIDXTexts'] = []
         
         # text information
-        TEXT = {}; TEXT['Group2TextMethod'] = Group2TextMethod; TEXT['EndIDXSents'] = []
-        if Group2TextMethod == 'file': TEXT['ORIGFileName'] = []
-        if 'ANNOIden' in anno_keywords: TEXT['ANNOFileName'] = []
+        TEXT = {}
+        TEXT['Group2TextMethod'] = Group2TextMethod
+        TEXT['EndIDXSents'] = []
+        if Group2TextMethod == 'file': 
+            TEXT['ORIGFileName'] = []
+        if 'ANNOIden' in anno_keywords: 
+            TEXT['ANNOFileName'] = []
             
         # sentence information
-        # TODO: change these to array to save space
-        SENT = {}; SENT['Text2SentMethod'] = Text2SentMethod; SENT['EndIDXTokens'] = np.zeros(5000000, dtype = int)
-        # even more file information will be included here. TODO change this to numpy
-        for ch, path in cls.Channel_Hyper_Path.items(): SENT[path] = np.zeros(5000000, dtype = int)
+        SENT = {}
+        SENT['Text2SentMethod'] = Text2SentMethod
+        SENT['EndIDXTokens'] = np.zeros(5000000, dtype = int)
+        # even more file information will be included here.
+        for ch, path in cls.Channel_Hyper_Path.items():
+            SENT[path] = np.zeros(5000000, dtype = int)
         
         # token information
-        TOKEN = {}; TOKEN['Sent2TokenMethod'] = Sent2TokenMethod
-        TOKEN['TOKENLevel'] = TOKENLevel; TOKEN['Channel_Hyper_Path'] = cls.Channel_Hyper_Path
+        TOKEN = {}
+        TOKEN['Sent2TokenMethod'] = Sent2TokenMethod
+        TOKEN['TOKENLevel'] = TOKENLevel
+        TOKEN['Channel_Hyper_Path'] = cls.Channel_Hyper_Path
 
 
         # consider how to deal with the annotation information
-        ANNO = {}; ANNO['anno'] = anno; ANNO['anno_keywords'] = anno_keywords
+        ANNO = {}
+        ANNO['anno'] = anno
+        ANNO['anno_keywords'] = anno_keywords
 
         ################################################################################################################
         CorpusGroups, GroupType = CorpusGroupsReader(CORPUSPath, iden = Corpus2GroupMethod)
         # print(CorpusGroups, GroupType)
         assert GROUP['GroupType'] == GroupType
-        pprint(GroupType)
+        print("[nlptext.base.INIT]//Corpus2Groups:\t", GroupType)
 
         oldDTU = defaultdict(int)# change this to default dict with int
         oldLTU = []
@@ -153,41 +176,55 @@ class BasicObject(object):
         total_sent_num = 0
         for group_idx, group_name in enumerate(CorpusGroups):
             # the following block deals with each group in a corpus
-            print(group_name)
+            print("[nlptext.base.INIT]//Group2Sentences:\t", group_name)
             text_names = CorpusGroups[group_name]
             GroupTexts = FolderTextsReaders[Group2TextMethod](group_name, text_names, anno, **anno_keywords)
             textIdx = 0
             for strText_SSET_O_A in GroupTexts:
-                # the following block deals with each text in a group
+                # Text2Sent (0): prepare the text information.
                 strText, SSETText, origTextName, annoTextName = strText_SSET_O_A
-                
-                # print(strText, SSETText, origTextName, annoTextName)
-                
+                # print("[nlptext.base.INIT]//Sentence:", strText, SSETText, origTextName, annoTextName)
+
+                # Text2Sent (1): split strText to strSents: [..., strSent, ...]
                 strSents = segText2Sents(strText, method = Text2SentMethod) 
 
-                # skip the sents that are empty and the sents which doesn't have annotations.
-                # if len(strSents) == 0 or (anno and len(SSETText) == 0): continue
-                if len(strSents) == 0: continue
+                # Text2Sent (2): dropping the low quality Texts.
+                # Text2Sent (2.a): skip the text that is empty.
+                if len(strSents) == 0: 
+                    continue
 
-                if anno: tokenizedSents = []
+                # Text2Sent (2.b): skip the text which doesn't have annotations.
+                # if anno and len(SSETText) == 0:
+                #     continue
+
+                # Annotation: tokenizedSents.
+                if anno: 
+                    tokenizedSents = []
                 # the following to blocks deal with multiple hyperfields (include token and annoE) for each strSent in strSents
                 # the main input are strText and strSents, (especially strSents)
                 
                 # block 1: for token and other hyper fields.
                 for idx, strSent in enumerate(strSents):
-                    print(idx, strSent[:10])
+
+                    # Sent2Token (0): prepare the sentence information.
+                    # print("[nlptext.base.INIT]//Sent:", idx, strSent[:10])
+                    
+                    # Sent2Token (1): split the sentence to tokens.
+                    strTokens, hyper_info = segSent2Tokens(strSent, Sent2TokenMethod, TOKENLevel, Channel_Dep_Methods)
+                    # print("[nlptext.base.INIT]//Sent:", strTokens, hyper_info)
+
                     # the following block deals with each strSent in a text.
                     # if strTags is not None, strTokens and strTags share the same length, 
                     # and this should be assert inside segSent2Tokens
-                    
                     # should assert [' ' not in strToken for strToken in strTokens]
                     # and len(hyper_info) == len(strTokens)
 
-                    strTokens, hyper_info = segSent2Tokens(strSent, Sent2TokenMethod, TOKENLevel, Channel_Dep_Methods)
-                    # print(strTokens, hyper_info)
+                    # Annotation: tokenizedSents.
                     # LESSION: update strSents, which will be used in annotation.
-                    if anno: tokenizedSents.append(strTokens)
-                    # deal with tokens
+                    if anno: 
+                        tokenizedSents.append(strTokens)
+
+                    # Sent2Token (3): deal with tokens.
                     for token in strTokens:
                         # the following block deals with each token in a text.
                         if token in oldDTU:
@@ -202,6 +239,7 @@ class BasicObject(object):
                             oldLTU.append(token)
                         token_num_in_corpus = token_num_in_corpus + 1
 
+                    # Sent2Token (4): store the information of tokens to the file.
                     with open(cls.Channel_Hyper_Path['token'], 'a') as f:
                         line_sentence = ' '.join(strTokens) + '\n'
                         f.write(line_sentence)
@@ -210,46 +248,36 @@ class BasicObject(object):
                     # total_sent_num increase all the time
                     # if it is 0, then SENT[cls.Channel_Hyper_Path['token']][total_sent_num - 1] will return 0
                     SENT[cls.Channel_Hyper_Path['token']][total_sent_num] = SENT[cls.Channel_Hyper_Path['token']][total_sent_num - 1] + bytelenSent
-                    # try:
-                    #     # SENT[cls.Channel_Hyper_Path['token']].append(SENT[cls.Channel_Hyper_Path['token']][-1] + bytelenSent)
-                    # except:
-                    #     SENT[cls.Channel_Hyper_Path['token']][total_sent_num] = bytelenSent
+                    
 
+                    # Sent2Token (6): store the information of the hyper field information.
                     # if use word level, make the sure that the return grains are the same.
                     # this is for generating the hyper field information.
                     # before using the hyper field information, we must know their labels before.
                     for ch, ch_grain_sent in hyper_info.items():
-                        # print(ch_grain_sent)
                         channel_name = ch + '-bioes'
                         ch_grain_sent = [str(cls.VOCAB[Path_Key][channel_name][1].get(i, 0)) for i in ch_grain_sent]
-                        # print(ch_grain_sent)
-                        # if not len(ch_grain_sent) == len(strTokens):
-                        #     print(list(zip(strTokens, ch_grain_sent)))
+
+                        # Sent2Token (5.b): check the error of hyperfields
+                        if not len(ch_grain_sent) == len(strTokens):
+                            print(list(zip(strTokens, ch_grain_sent)))
                         assert len(ch_grain_sent) == len(strTokens)
-                        # or you can create a file, which is LineSentence type file. each line is a sentence.
+
+                        # Sent2Token (6.a): store the hyperfield information.
                         with open(cls.Channel_Hyper_Path[ch], 'a') as f:
                             line_sentence = ' '.join(ch_grain_sent) + '\n'
                             f.write(line_sentence)
                             bytelenSent = utf8len(line_sentence)
 
                         SENT[cls.Channel_Hyper_Path[ch]][total_sent_num] = SENT[cls.Channel_Hyper_Path[ch]][total_sent_num - 1] + bytelenSent
-                        # try:
-                        #     SENT[cls.Channel_Hyper_Path[ch]].append(SENT[cls.Channel_Hyper_Path[ch]][-1] + bytelenSent)
-                        # except:
-                        #     SENT[cls.Channel_Hyper_Path[ch]].append(bytelenSent)
 
                     # adding the sentence length, i.e., the token number in this sentence.
                     lenSent = len(strTokens)
                     SENT['EndIDXTokens'][total_sent_num] = SENT['EndIDXTokens'][total_sent_num - 1] + lenSent
-                    # try:
-                    #     SENT['EndIDXTokens'].append(SENT['EndIDXTokens'][-1] + lenSent)
-                    # except:
-                    #     SENT['EndIDXTokens'].append(lenSent)
 
                     # add a num to total_sent_num
                     # to process next sentence
                     total_sent_num = total_sent_num + 1
-
 
                     # logging the information and epxand the length if necessary
                     if total_sent_num % 100000 == 0:
@@ -268,11 +296,13 @@ class BasicObject(object):
                             print('\tupdated leng is:', len(SENT['EndIDXTokens']))
 
 
-                # block1: for annotation.
+                # Annotation: generate annotation information.
                 if anno: 
-                    # if SSETText == []: print('\nThe SSET of this Text is Empty!!!', '\n', strText, '\n')
+                    # (*) some sentence does have information annotation information.
+                    # if SSETText == []: 
+                    #     print('\nThe SSET of this Text is Empty!!!', '\n', strText, '\n')
 
-                    # produce the VOCAB
+                    # (*) produce the VOCAB
                     new_labels = set([sset[-1] for sset in SSETText])
                     for label in new_labels:
                         if label not in anno_labels:
@@ -281,13 +311,13 @@ class BasicObject(object):
                                 cls.VOCAB[Path_Key]['annoE-bioes'][1][label + suffix] = len(cls.VOCAB[Path_Key]['annoE-bioes'][1])
                                 cls.VOCAB[Path_Key]['annoE-bioes'][0].append(label + suffix)
 
-                    # it will check strText and SSET inside getCITText
+                    # (*) it will check strText and SSET inside getCITText
                     CITText  = getCITText(strText, SSETText, TOKENLevel) 
                     
-                    # get CITSents
+                    # (*) get CITSents
                     CITSents = getCITSents(tokenizedSents, CITText, TOKENLevel)
                     
-                    # pay attention: do not change total_sent_num
+                    # (*) pay attention: do not change total_sent_num
                     last_total_sent_num = total_sent_num - len(CITSents) 
                     for sentIdx, CITSent in enumerate(CITSents):
                         anno_tags = [CITToken[2] for CITToken in CITSent]
@@ -303,10 +333,7 @@ class BasicObject(object):
                         
                         sent_loc_id = last_total_sent_num + sentIdx
                         SENT[cls.Channel_Hyper_Path['annoE']][sent_loc_id] = SENT[cls.Channel_Hyper_Path['annoE']][sent_loc_id - 1] + bytelenSent
-                        # try:
-                        #     SENT[cls.Channel_Hyper_Path['annoE']].append(SENT[cls.Channel_Hyper_Path['annoE']][-1] + bytelenSent)
-                        # except:
-                        #     SENT[cls.Channel_Hyper_Path['annoE']].append(bytelenSent)
+                        
                     assert sent_loc_id + 1 == total_sent_num
                     if annoTextName:
                         TEXT['ANNOFileName'].append(annoTextName)
@@ -320,13 +347,8 @@ class BasicObject(object):
                     
                 if origTextName:
                     TEXT['ORIGFileName'].append(origTextName)
-                
+    
                 textIdx = textIdx + 1
-                # if textIdx % 100000 == 0:
-                #     print(textIdx, '--', len(strSents), len(strText), datetime.now())
-                #     print(len(SENT['EndIDXTokens']))
-                #     for ch, ch_grain_sent in hyper_info.items():
-                #         print(len(SENT[cls.Channel_Hyper_Path[ch]]), ch)# .append(bytelenSent)
 
             # Back to Folder
             lenGroup = textIdx
@@ -336,7 +358,7 @@ class BasicObject(object):
             except:
                 GROUP['EndIDXTexts'].append(lenGroup)
         
-        # if there is an error, folderIdx will be referenced before assignment
+        # If there is an error, folderIdx will be referenced before assignment
         lenCorpus = group_idx + 1 
         CORPUS['EndIDXGroups'] = [lenCorpus]
 
@@ -363,8 +385,8 @@ class BasicObject(object):
         for new_idx, token in enumerate(LTU):
             DTU[token] = new_idx
         
-        print('Total Num of All    Tokens', token_num_in_corpus)
-        print('Total Num of Unique Tokens', len(LTU))
+        print('[nlptext.base.INIT]//Summary: Total Num of Tokens in Corpus:', token_num_in_corpus)
+        print('[nlptext.base.INIT]//Summary: Total Num of Tokens in Vocab :', len(LTU))
 
         # load 五大老五奉行, TODO: this can be changed
         CORPUS['EndIDXGroups'] = np.array(CORPUS['EndIDXGroups'])
@@ -398,8 +420,8 @@ class BasicObject(object):
 
         max_vocab_token_num = get_num_freq(cls.idx2freq, min_token_freq = min_token_freq)
         cls.min_token_freq = min_token_freq
-        # cls.max_vocab_token_num = max_vocab_token_num
-        cls._buildGVforToken(max_vocab_token_num, min_token_freq)
+        print("[nlptext.base.INIT]:", '\tmin_token_freq', min_token_freq, ';\t', 'max_vocab_token_num', max_vocab_token_num)
+        cls._buildGVforToken(max_vocab_token_num, min_token_freq, init = True)
 
         folder = 'F' + str(min_token_freq) 
         Path_Key = os.path.join(cls.Data_Dir, 'Vocab', folder)
@@ -420,15 +442,18 @@ class BasicObject(object):
              'TEXT':   cls.TEXT, 
              'SENT':   cls.SENT, 
              'TOKEN':  cls.TOKEN}
+
+        print('\n' + '*'*40)
         for k, v in d.items():
             pickle_path = os.path.join(Pyramid_Dir, k + '.p')
             with open(pickle_path, 'wb') as handle:
                 pickle.dump(v, handle, protocol=4 )
-                print(k + '\tit is Dumped into file:', pickle_path)
-                print(k + '\tthe length of it is   :', v['length'])
+                print("[nlptext.base.OBJECT_TO_PICKLE]:", k + '\tit is Dumped into file:', pickle_path)
+                print("[nlptext.base.OBJECT_TO_PICKLE]:", k + '\tthe length of it is   :', v['length'])
         print('*'*40, '\n')
 
         ################################################################################
+        print('*'*40)
         Path_Key = os.path.join(Data_Dir, 'Vocab')
         if not os.path.exists(Path_Key):
             os.makedirs(Path_Key)
@@ -439,73 +464,101 @@ class BasicObject(object):
             with open(pickle_path, 'wb') as handle:
                 # v is (LGU, DGU)
                 pickle.dump(v, handle, protocol=4)
-                print(k + '\tis Dumped into file:', pickle_path)
-                print(k + '\tthe length of it is   :', len(v[0]))
+                print("[nlptext.base.OBJECT_TO_PICKLE]:", k + '\tis Dumped into file:', pickle_path)
+                print("[nlptext.base.OBJECT_TO_PICKLE]:", k + '\tthe length of it is   :', len(v[0]))
             
             channel_name_path = os.path.join(Path_Key, k + '.tsv')
             writeGrainList2File(channel_name_path, v[0])
-            print('\t\tWrite to:', channel_name_path)
+            print("[nlptext.base.OBJECT_TO_PICKLE]:", '\t\tWrite to:', channel_name_path)
 
         ################################################################################ 
+        
         pickle_path = os.path.join(Path_Key, 'token.voc')
         with open(pickle_path, 'wb') as handle:
             # v is (LGU, DGU)
             pickle.dump(cls.TokenVocab, handle, protocol=4)
-            print('token   ' + '\tis Dumped into file:', pickle_path)
-            print('token   ' + '\tthe length of it is   :', len(cls.TokenVocab[0]))
+            print("[nlptext.base.OBJECT_TO_PICKLE]:", 'token   ' + '\tis Dumped into file:', pickle_path)
+            print("[nlptext.base.OBJECT_TO_PICKLE]:", 'token   ' + '\tthe length of it is   :', len(cls.TokenVocab[0]))
         
         channel_name_path = os.path.join(Path_Key, 'token.tsv')
         writeGrainList2File(channel_name_path, cls.TokenVocab[0])
-        print('\t\tWrite to:', channel_name_path)
+        print("[nlptext.base.OBJECT_TO_PICKLE]:", '\t\tWrite to:', channel_name_path)
 
         pickle_path = os.path.join(Path_Key, 'token.freq')
         with open(pickle_path, 'wb') as handle:
             pickle.dump(cls.idx2freq, handle, protocol=4)
-        print('*'*40)
+        print('*'*40, '\n')
         
     @classmethod
     def _load_tokenvocab_from_disk(cls):
         ################################################################################
+        print("[nlptext.base._load_tokenvocab_from_disk]:", 'load the information for all tokens from the corpus.')
         Path_Key = os.path.join(cls.Data_Dir, 'Vocab')
         pickle_path = os.path.join(Path_Key, 'token.freq')
+        cls.VOCAB[Path_Key] = {} if Path_Key not in cls.VOCAB else cls.VOCAB[Path_Key]
+
+        ################################################################################
+        print("[nlptext.base._load_tokenvocab_from_disk]:", '(a) Frequency...')
         with open(pickle_path, 'rb') as handle:
             cls.idx2freq = pickle.load(handle)
 
         ################################################################################
-        cls.VOCAB[Path_Key] = {} if Path_Key not in cls.VOCAB else cls.VOCAB[Path_Key]
-
+        print("[nlptext.base._load_tokenvocab_from_disk]:", '(b) Token Vocabulary (freq = 1)...')
         pickle_path = os.path.join(Path_Key, 'token.voc')
         with open(pickle_path, 'rb') as handle:
             cls.TokenVocab = pickle.load(handle)
 
+        ################################################################################
         orig_vocab_length = len(cls.TokenVocab[0])
+        print("[nlptext.base._load_tokenvocab_from_disk]:", '(c) original_vocab_token_num is', orig_vocab_length, '...')
         cls.original_vocab_token_num = orig_vocab_length
         cls.current_vocab_token_num  = orig_vocab_length
 
     @classmethod
-    def _buildGVforToken(cls, max_vocab_token_num = None, min_token_freq = 1):
+    def _buildGVforToken(cls, max_vocab_token_num = None, min_token_freq = 1, init = False):
         # both two inputs are valid
-        try:
-            if min_token_freq == cls.min_token_freq:
-                return cls.TokenVocab 
-        except:
+        # by default, it is all the tokens that appear in the corpus.
+        # print("[nlptext.base._buildGVforToken]:", len(cls.TokenVocab[0]), cls.min_token_freq )
+
+
+        Path_Key = os.path.join(cls.Data_Dir, 'Vocab')
+        pickle_path = os.path.join(Path_Key, 'token.freq')
+
+        
+        if init == True and min_token_freq == 1:
+            # case (1): min_token_freq is equal to the original cls.min_token_freq. at the very begining, it is 1.
+            # case (1) is in [nlptext.base.INIT].
+            print("[nlptext.base._buildGVforToken]:", 'get TokenVocab from cls.TokenVocab directly' )
+            return cls.TokenVocab 
+
+        elif os.path.isfile(pickle_path):
+
+            # case (2): min_token_freq is not the same to the original cls.min_token_freq.
             cls.min_token_freq = min_token_freq
 
-        if min_token_freq < cls.min_token_freq:
-            # reset all token vocab from disk
-            cls._load_tokenvocab_from_disk()
+            # case (2.1) load the orignal tokens' information
+            # cls._load_tokenvocab_from_disk()
 
-        cls.idx2freq = cls.idx2freq[:max_vocab_token_num]
-        LTU, DTU = cls.TokenVocab
-        LTU = LTU[:max_vocab_token_num]
-        DTU = {}
-        for newidx in range(max_vocab_token_num):
-            DTU[LTU[newidx]] = newidx
-        cls.TokenVocab = LTU, DTU
-        # print(max_vocab_token_num, min_token_freq)
-        cls.current_vocab_token_num = max_vocab_token_num
-        cls.min_token_freq = min_token_freq
-        return cls.TokenVocab 
+            # case (2.2) update the idx2freq and token vocab
+            print("[nlptext.base._buildGVforToken]:", '(a) Update Frequency...')
+            cls.idx2freq = cls.idx2freq[:max_vocab_token_num]
+            print("[nlptext.base._buildGVforToken]:", '(b) Update Token Vocab', '( freq = ' + str(min_token_freq) + ' )', '...')
+            LTU, DTU = cls.TokenVocab
+            LTU = LTU[:max_vocab_token_num]
+            DTU = {}
+            for newidx in range(max_vocab_token_num):
+                DTU[LTU[newidx]] = newidx
+            cls.TokenVocab = LTU, DTU
+            # print(max_vocab_token_num, min_token_freq)
+            print("[nlptext.base._buildGVforToken]:", '(c) current_vocab_token_num is', max_vocab_token_num, '...')
+
+            # case (2.3) update current_vocab_token_num and min_token_freq
+            cls.current_vocab_token_num = max_vocab_token_num
+            cls.min_token_freq = min_token_freq
+            return cls.TokenVocab 
+
+        else:
+            print("[nlptext.base._buildGVforToken]:", 'Errors.')
 
     @classmethod
     def INIT_FROM_PICKLE(cls, Data_Dir, min_token_freq = 1):
@@ -513,20 +566,27 @@ class BasicObject(object):
         cls.Data_Dir = Data_Dir
         ################################################################################
         layer_names = ['CORPUS', 'GROUP','TEXT', 'SENT','TOKEN' ]
+        print('\n' + '*'*40)
         for layer_name in layer_names:
             pickle_path = os.path.join(Data_Dir, 'Pyramid', layer_name + '.p')
             with open(pickle_path, 'rb') as handle:
                 v = pickle.load(handle)
                 setattr(cls, layer_name,  v)
-                print(layer_name + '\tread from pickle file :', pickle_path)
-                print(layer_name + '\tthe length of it is   :', v['length'])
+                print("[nlptext.base.INIT_FROM_PICKLE]:", layer_name + '\tis read from pickle file :', pickle_path)
+                print("[nlptext.base.INIT_FROM_PICKLE]:",  5 * ' ', '\tthe number of objects is :', v['length'])
         print('*'*40, '\n')
 
+        ################################################################################
+        print('\n' + '*'*40)
         cls.Channel_Hyper_Path = cls.TOKEN['Channel_Hyper_Path']
         # idx2freq and TokenVocab
         cls._load_tokenvocab_from_disk()
         max_vocab_token_num = get_num_freq(cls.idx2freq, min_token_freq = min_token_freq)
+        
         cls._buildGVforToken(max_vocab_token_num, min_token_freq)
+
+        print("[nlptext.base.INIT_FROM_PICKLE]:", '\tmin_token_freq', min_token_freq, ';\t', 'max_vocab_token_num', max_vocab_token_num)
+        print('*'*40, '\n')
 
         folder = 'F' + str(min_token_freq) 
         Path_Key = os.path.join(cls.Data_Dir, 'Vocab', folder)
@@ -548,7 +608,7 @@ class BasicObject(object):
     @classmethod
     def _buildGVforHyper(cls, Path_Key, channel, channel_name):
         # build GV for hyper field
-        print('\t\tBuild GrainUnique for channel:', channel_name)
+        print("[nlptext.base._buildGVforHyper]:",  '\t\tBuild GrainUnique for channel:', channel_name)
         ############################################# Generate New LGU for CTX_Dep
         channel, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme = getChannelName(channel, channel_name = channel_name, style = 'extract')
         print(channel, Max_Ngram, end_grain, tagScheme)
@@ -581,17 +641,17 @@ class BasicObject(object):
         channel_name_pickle = os.path.join(Path_Key, channel_name + '.voc')
         with open(channel_name_pickle, 'wb') as handle:
             pickle.dump(GrainVocab, handle)
-        print('\t\tWrite to:', channel_name_pickle)
+        print("[nlptext.base._buildGVforHyper]:", '\t\tWrite to:', channel_name_pickle)
 
         channel_name_path = os.path.join(Path_Key, channel_name + '.tsv')
         writeGrainList2File(channel_name_path, GrainVocab[0])
-        print('\t\tWrite to:', channel_name_path)
+        print("[nlptext.base._buildGVforHyper]:", '\t\tWrite to:', channel_name_path)
         return GrainVocab
 
     @classmethod
     def _buildGVforSub(cls, Path_Key, channel, channel_name, min_token_freq = 1):
 
-        print('\t\tBuild Grain Uniqe and LookUp Table for channel:', channel_name)
+        print("[nlptext.base._buildGVforSub]:", '\t\tBuild Grain Uniqe and LookUp Table for channel:', channel_name)
 
         channel, Min_Ngram, Max_Ngram, end_grain, min_grain_freq, tagScheme = getChannelName(channel, channel_name = channel_name, style = 'extract')
         
@@ -606,11 +666,11 @@ class BasicObject(object):
         channel_name_pickle = os.path.join(Path_Key, channel_name + '.voc')
         with open(channel_name_pickle, 'wb') as handle:
             pickle.dump(GrainVocab, handle)
-        print('\t\tWrite to:', channel_name_pickle)
+        print("[nlptext.base._buildGVforSub]:", '\t\tWrite to:', channel_name_pickle)
         
         channel_name_path = os.path.join(Path_Key, channel_name + '.tsv')
         writeGrainList2File(channel_name_path, GrainVocab[0])
-        print('\t\tWrite to:', channel_name_path)
+        print("[nlptext.base._buildGVforSub]:", '\t\tWrite to:', channel_name_path)
 
         # save LKP to LOOKUP
         cls.LOOKUP[Path_Key] = cls.LOOKUP[Path_Key] if Path_Key in cls.LOOKUP else {}
@@ -620,7 +680,7 @@ class BasicObject(object):
         with open(pickle_path, 'wb') as handle:
             pickle.dump(LKP, handle)
         # assert len(LookUp) == len(cls.TokenVocab[0])
-        print('\t\tWrite to:', pickle_path)
+        print("[nlptext.base._buildGVforSub]:", '\t\tWrite to:', pickle_path)
 
         # save LKP to LOOKUP
         cls.FREQ[Path_Key] = cls.FREQ[Path_Key] if Path_Key in cls.FREQ else {}
@@ -629,8 +689,7 @@ class BasicObject(object):
         pickle_path = os.path.join(Path_Key,  channel_name + '.freq')
         with open(pickle_path, 'wb') as handle:
             pickle.dump(grainidx2freq, handle)
-        print('\t\tWrite to:', pickle_path)
-       
+        print("[nlptext.base._buildGVforSub]:", '\t\tWrite to:', pickle_path)
         return GrainVocab
 
     @classmethod
@@ -642,7 +701,7 @@ class BasicObject(object):
             if min_token_freq == cls.min_token_freq or not min_token_freq:
                 return cls.TokenVocab
             else:
-                raise('Error in getting token vocab, only one method is implemented now.')
+                raise("[nlptext.base.getGrainVocab]:", 'Error in getting token vocab, only one method is implemented now.')
 
         # find the Data_Dir
         Data_Dir = cls.Data_Dir if not Data_Dir else Data_Dir
@@ -682,8 +741,8 @@ class BasicObject(object):
                         return cls._buildGVforSub(Path_Key, channel, channel_name, min_token_freq = min_token_freq)
                 else:
                     channel_name_pickle = os.path.join(Path_Key, channel_name + '.voc')
-                    print('In', Data_Dir, 'there is no GrainUnqiue for:', channel_name)
-                    print('Error in:', channel_name_pickle)
+                    print("[nlptext.base.getGrainVocab]:",  'In', Data_Dir, 'there is no GrainUnqiue for:', channel_name)
+                    print("[nlptext.base.getGrainVocab]:",  'Error in:', channel_name_pickle)
 
     @classmethod
     def getLookUp(cls, channel = None, Min_Ngram = 1, Max_Ngram = 1, end_grain = False, min_grain_freq = 1, channel_name = None,
@@ -721,11 +780,11 @@ class BasicObject(object):
 
                 # read from other pyramid is still no valid
                 TV = cls.getGrainVocab(channel = 'token', Data_Dir = Data_Dir)
-                print('Get LookUp Table for Channel:', channel_name)
+                print("[nlptext.base.getLookUp]:",  'Get LookUp Table for Channel:', channel_name)
                 return LKP, TV
             except:
-                print('\tIn', Path_Key, 'there is no LookUp Table for:', channel_name)
-                print('\tError in:', path)
+                print("[nlptext.base.getLookUp]:",  '\tIn', Path_Key, 'there is no LookUp Table for:', channel_name)
+                print("[nlptext.base.getLookUp]:",  '\tError in:', path)
                 return None
 
     @classmethod
@@ -763,8 +822,8 @@ class BasicObject(object):
                 # read from other pyramid is still no valid
                 return Freq
             except:
-                print('\tIn', Path_Key, 'there is no LookUp Table for:', channel_name)
-                print('\tError in:', path)
+                print("[nlptext.base.getFreq]:",  '\tIn', Path_Key, 'there is no LookUp Table for:', channel_name)
+                print("[nlptext.base.getFreq]:",  ('\tError in:', path))
                 return None
 
 
@@ -799,17 +858,18 @@ class BasicObject(object):
         cls.CHANNEL_SETTINGS, cls.channels_folderName = get_Channel_Settings(CHANNEL_SETTINGS_TEMPLATE)
 
         for channel in cls.CHANNEL_SETTINGS:
-            print('Deal with the Channel:', channel)
+            print("[nlptext.base.BUILD_GV_LKP]:", 'Deal with the Channel:', channel)
             channel_setting = cls.CHANNEL_SETTINGS[channel]
             Min_Ngram    = channel_setting.get('Min_Ngram', 1)
             Max_Ngram    = channel_setting.get('Max_Ngram', 1)
             end_grain    = channel_setting.get('end_grain', False)
             tagScheme    = channel_setting.get('tagScheme', 'BIO')
             min_grain_freq = channel_setting.get('min_grain_freq', 1)
-            print('Current Channel is       ', '\t', channel)
-            print('Current Channel Max_Ngram', '\t', Max_Ngram)
+            print("[nlptext.base.BUILD_GV_LKP]:", 'Current Channel is       ', '\t', channel)
+            print("[nlptext.base.BUILD_GV_LKP]:", 'Current Channel Max_Ngram', '\t', Max_Ngram)
             cls.getGrainVocab(channel, Min_Ngram = Min_Ngram, Max_Ngram = Max_Ngram, end_grain = end_grain, tagScheme = tagScheme, min_grain_freq = min_grain_freq)
     
+
 
 def convert_Char_2_Word_BasicObject(BasicObject, use_channel = 'pos', MaxTokenUnique = False):
     
