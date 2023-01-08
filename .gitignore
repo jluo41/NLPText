@@ -22,7 +22,7 @@ ZhihuContent/
 output/
 embed/
 channel/
-data/
+data/nlpdata
 
 *.pyc
 
